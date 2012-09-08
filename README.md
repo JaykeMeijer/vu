@@ -11,8 +11,8 @@ assignment 1
 > Every thread that uses this list will lock the
 > whole data structure before entering the critical section.
 > The critical section in this case is: 
-> 1.lookup
-> 2.inserting/deleting.
+> 1.    lookup
+> 2.    inserting/deleting.
 > The lookup will be different for inserting and deletion.
 >
 > Let X and Y be a Thread that both have items to add to the list. For any
