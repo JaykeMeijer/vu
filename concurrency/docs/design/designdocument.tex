@@ -8,19 +8,23 @@
 \usepackage{graphicx}
 \usepackage[all]{xy}
 \usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
-\author{Rick van der Kooi 2343242 \& Richard Torenvliet 234234}
+\author{Rik van der Kooij 2526314\\Richard Torenvliet 234234}
 \title{Assignment 1 - Design Document}
 \begin{document}
 \maketitle
 
+\section{Introduction}
+
+
 \section{Coarse Grained List}
-    Every thread that uses this list will lock the
-    whole data structure before entering the critical section.
+\subsection{Implementation}
+    The coarse grained list uses one lock to provide a concurrent data structure. All threads will have to acquire the lock before any operation can be done. 
     The critical section in this case is: 
         \begin{enumerate}
         \item lookup
         \item inserting/deleting.
         \end{enumerate}
+    % Different? Bij lookup moet je toch ook locken?
     The lookup will be different for inserting and deletion.
     \\
     Let X and Y be a Thread that both have items to add to the list. For every
@@ -46,6 +50,7 @@ implementation of the synchronization in combination with the data structure.
 \end{itemize}
 
 \section{Coarse Grained Tree}
+\subsection{Implementation}
 The Course Grained synchronization in a tree also locks the entire
 data structure. By inserting an item the lookup and inserting will have to
 require a lock. Thread Y also needs to wait until
