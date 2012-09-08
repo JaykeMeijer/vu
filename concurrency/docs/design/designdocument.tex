@@ -32,16 +32,16 @@
     as a sequential implementation of the linked list data structure.
 
 \subsection{Performance Hypothesis}
-Let E be the number of elements to add or delete, T the amount of threads
-that work with this data structure and W the amount of work per Thread in
+Let $\#e$ be the number of elements to add or delete, $\#t$ the amount of threads
+that work with this data structure and $\#w$ the amount of work per Thread in
 comparison to inserting/deleting nodes. By letting one value to stay the same
 and to other to grow, we can make a hypothesis about the performance of the
 implementation of the synchronization in combination with the data structure.
 \begin{itemize}
-\item E: if E grows and T stays equal, only the lookup could influence the performance.
+\item $\#e$: if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the performance.
     i.e. more lookups, more work
- \item T: if T grows and E stays equal, there will be no influence on the performance.
- \item W: 
+ \item $\#t$: if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
+ \item $\#w$: 
     \todo[inline]{Needs to be filled in, I don't yet know}
 \end{itemize}
 
@@ -53,10 +53,10 @@ Thread X is done with these operation for inserting and deleting.
 
 \subsection{Performance Hypothesis}
 \begin{itemize}
- \item E:   if E grows and T stays equal, only the lookup could influence the
+ \item $\#e$:   if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the
  performance. \\ i.e. more lookups, more work
- \item T:   if T grows and E stays equal, there will be no influence on the performance.
- \item W:   \todo[inline]{needs to be filled in}
+ \item $\#t$:   if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
+ \item $\#w$:   \todo[inline]{needs to be filled in}
 \end{itemize}
 
 \section{Fine Grained List}
@@ -82,7 +82,15 @@ list, Thread Z will not be able to insert or delete any nodes. So it stalls,
 together with all the other Thread that may attempt to access the list.
 
 \subsection{Performance Hypothesis}
-lorem
+\todo[inline]{write this}
+\begin{itemize}
+ \item $\#e$:  if $\#e$ grows and $\#t$ stays equal, wait time can be
+ reduced..... 
+ \item $\#t$:  if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
+ \item $\#w$:  \todo[inline]{needs to be filled in}
+\end{itemize}
+
+
 
 
 \end{document}
