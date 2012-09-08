@@ -22,13 +22,16 @@ assignment 1
 > This means that any number of Threads will have to wait before they can start
 > doing anything with the data structure. Which will exactly be the same
 > as a sequential implementation of the linked list data structure.
-> 
+> #### performance hypothesis 
 > E: number of elements
 > T: number of threads
 > A: amount of work per thread
 > if E grows and T stays equal, only the lookup could influence the performance.
 >   i.e. more lookups, more work
 > if T grows and E stays equal, there will be no influence on the performance.
+> ### Implementation approach
+>
+>
 
 ## Coarse Grained Tree
 > ### Estimate performance
@@ -37,13 +40,17 @@ assignment 1
 > require a lock. Thread Y also needs to wait until
 > Thread X is done with these operation for inserting and deleting.
 >
+> #### performance hypothesis
 > E: number of elements
 > T: number of threads
 > A: amount of work per thread
 > if E grows and T stays equal, only the lookup could influence the performance.
 >   i.e. more lookups, more work
 > if T grows and E stays equal, there will be no influence on the performance.
-
+> #### Implementation Approach
+>
+>
+>
 
 
 
