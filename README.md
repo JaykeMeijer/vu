@@ -34,7 +34,7 @@ assignment 1
 > ### Estimate performance
 > The Course Grained synchronization in a tree also locks the entire
 > data structure. By inserting an item the lookup and inserting will have to
-> require a lock but now in a tree fashion. Thread Y also needs to wait until
+> require a lock. Thread Y also needs to wait until
 > Thread X is done with these operation for inserting and deleting.
 >
 > E: number of elements
