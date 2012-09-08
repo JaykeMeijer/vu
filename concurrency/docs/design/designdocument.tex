@@ -2,10 +2,12 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 \usepackage{amsmath}
+\usepackage{todonotes}
 \usepackage{amsfonts}
 \usepackage{amssymb}
 \usepackage{graphicx}
-\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage[all]{xy}
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
 \author{Rick van der Kooi 2343242 \& Richard Torenvliet 234234}
 \title{Assignment 1 - Design Document}
 \begin{document}
@@ -25,34 +27,62 @@
     item, the thread X and Y will have to require a lock. So
     if X has the lock, Thread Y has to wait until Thread X is 
     done with 1. and 2.
-    This means that any number of Threads will have to wait before they can start
+    This means that any number of Threads are forced to wait in line before they can start
     doing anything with the data structure. Which will exactly be the same
     as a sequential implementation of the linked list data structure.
 
-\section{performance hypothesis}
+\subsection{Performance Hypothesis}
+Let E be the number of elements to add or delete, T the amount of threads
+that work with this data structure and W the amount of work per Thread in
+comparison to inserting/deleting nodes. By letting one value to stay the same
+and to other to grow, we can make a hypothesis about the performance of the
+implementation of the synchronization in combination with the data structure.
 \begin{itemize}
- \item E: number of elements 
-    if E grows and T stays equal, only the lookup could influence the performance.
+\item E: if E grows and T stays equal, only the lookup could influence the performance.
     i.e. more lookups, more work
- \item T: number of threads 
-    if T grows and E stays equal, there will be no influence on the performance.
- \item  A: amount of work per thread
+ \item T: if T grows and E stays equal, there will be no influence on the performance.
+ \item W: 
+    \todo[inline]{Needs to be filled in, I don't yet know}
 \end{itemize}
 
-Coarse Grained Tree
-\section{Estimate performance}
+\section{Coarse Grained Tree}
 The Course Grained synchronization in a tree also locks the entire
 data structure. By inserting an item the lookup and inserting will have to
 require a lock. Thread Y also needs to wait until
 Thread X is done with these operation for inserting and deleting.
 
-\section{performance hypothesis}
+\subsection{Performance Hypothesis}
 \begin{itemize}
- \item E: number of elements 
-    if E grows and T stays equal, only the lookup could influence the performance.
-    i.e. more lookups, more work
- \item T: number of threads 
-    if T grows and E stays equal, there will be no influence on the performance.
- \item  A: amount of work per thread
+ \item E:   if E grows and T stays equal, only the lookup could influence the
+ performance. \\ i.e. more lookups, more work
+ \item T:   if T grows and E stays equal, there will be no influence on the performance.
+ \item W:   \todo[inline]{needs to be filled in}
 \end{itemize}
+
+\section{Fine Grained List}
+The concurrent implementation of a linked-list data structure with Fine Grained
+Synchronization means that components now have their own individual lock. The
+nodes in the list are locked when read, not the entire data structure. Which
+results in a list where Threads can operate at the same time. To achieve this
+kind of synchronization, the locks have to be two folded. Which is also known 
+as \emph{lock coupling}, Thread X can only acquire the lock for the current 
+Node, if and only if it still has the lock for the previous Node.
+\begin{figure}[h]
+\centerline{
+\xymatrix{
+*+++[F=]{head} \ar[r] & *+++[F=]{a pred} \ar[r] & *+++[F]{b curr} \\
+locked & locked & acquire lock 
+}}
+\caption{linked-list coupled lock}
+\end{figure}
+If Thread X locks item 100 in the list, Thread Y can lock and thereby
+insert/delete any Node between the start item and the item 100. This
+also holds for any other Thread. But if Thread Y locks the first item in the
+list, Thread Z will not be able to insert or delete any nodes. So it stalls,
+together with all the other Thread that may attempt to access the list.
+
+\subsection{Performance Hypothesis}
+lorem
+
+
 \end{document}
