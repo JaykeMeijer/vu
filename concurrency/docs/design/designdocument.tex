@@ -7,30 +7,48 @@
 \usepackage{amssymb}
 \usepackage{graphicx}
 \usepackage[all]{xy}
+\usepackage{listings}
 \usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
-\author{Rick van der Kooi 2343242 \& Richard Torenvliet 234234}
+\author{Rik van der Kooij 2526314\\Richard Torenvliet 234234}
 \title{Assignment 1 - Design Document}
 \begin{document}
 \maketitle
 
-\section{Coarse Grained List}
-    Every thread that uses this list will lock the
-    whole data structure before entering the critical section.
-    The critical section in this case is: 
-        \begin{enumerate}
-        \item lookup
-        \item inserting/deleting.
-        \end{enumerate}
-    The lookup will be different for inserting and deletion.
-    \\
-    Let X and Y be a Thread that both have items to add to the list. For every
-    item, the thread X and Y will have to require a lock. So
-    if X has the lock, Thread Y has to wait until Thread X is 
-    done with 1. and 2.
-    This means that any number of Threads are forced to wait in line before they can start
-    doing anything with the data structure. Which will exactly be the same
-    as a sequential implementation of the linked list data structure.
+%\section{Introduction}
 
+
+\section{Coarse Grained List}
+\subsection{Implementation}
+    The coarse grained list is a linked list. One lock is used to provide a concurrent data structure. All threads will have to acquire this lock before operating the list and unlock it after. 
+   
+\begin{lstlisting}
+    insert(e) 
+        lock()
+        add(e) // add the elemen to the listt
+        unlock()
+
+    remove(e)
+        lock()
+        rm(e)  // remove the elemen from the list
+        unlock()
+\end{lstlisting}
+
+\begin{figure}[!h]
+\centerline{
+    \xymatrix {
+        head \ar[r] & ... \ar[r] & tail
+        \save "1,1"."1,3"*+[F.]\frm{} \restore
+    }
+    %\xymatrix @R=1pc {
+    %    1,1 & *+[F]{head} \ar[r] & 1,3 & *+[F]{tail} & 1,5
+    %    \\2,1 & 2,2 & 2,3 & 2,4 & 2,5
+    %    \save "1,2"."2,4"*++[F]\frm{}
+    %    \ar"1,1" \ar"2,1" \ar"1,5" \ar"2,5" \restore
+    %}
+}
+\caption{linked-list coupled lock}
+\end{figure}
+    
 \subsection{Performance Hypothesis}
 Let $\#e$ be the number of elements in the data structure, $\#t$ the amount of threads
 that work with this data structure and $\#w$ the amount of work per Thread in
@@ -42,31 +60,45 @@ implementation of the synchronization in combination with the data structure.
     i.e. more lookups, more work
  \item $\#t$: if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
  \item $\#w$: 
-    \todo[inline]{Needs to be filled in, I don't yet know}
 \end{itemize}
 
 \section{Coarse Grained Tree}
-The Course Grained synchronization in a tree also locks the entire
-data structure. By inserting an item the lookup and inserting will have to
-require a lock. Thread Y also needs to wait until
-Thread X is done with these operation for inserting and deleting.
+\subsection{Implementation}
+%The Course Grained synchronization in a tree also locks the entire
+%data structure. By inserting an item the lookup and inserting will have to
+%require a lock. Thread Y also needs to wait until
+%Thread X is done with these operation for inserting and deleting.
+
+The coarse grained tree is a binary tree which uses one lock to provide a concurrent data structure.
+
+    \begin{lstlisting}
+        insert(E e) 
+            lock()
+            add(E e) // add the element
+            unlock()
+
+        remove(E e)
+            lock()
+            rm(E e)  // remove the element
+            unlock()
+    \end{lstlisting}
 
 \subsection{Performance Hypothesis}
-\begin{itemize}
- \item $\#e$:   if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the
- performance. \\ i.e. more lookups, more work
- \item $\#t$:   if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
- \item $\#w$:   \todo[inline]{needs to be filled in}
-\end{itemize}
+%\begin{itemize}
+% \item $\#e$:   if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the
+% performance. \\ i.e. more lookups, more work
+% \item $\#t$:   if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
+% \item $\#w$:   \todo[inline]{needs to be filled in}
+%\end{itemize}
 
 \section{Fine Grained List}
-The concurrent implementation of a linked-list data structure with Fine Grained
-Synchronization means that components now have their own individual lock. The
-nodes in the list are locked when read, not the entire data structure. Which
-results in a list where Threads can operate at the same time. To achieve this
-kind of synchronization, the locks have to be two folded. Which is also known 
-as \emph{lock coupling}, Thread X can only acquire the lock for the current 
-Node, if and only if it still has the lock for the previous Node.
+%The concurrent implementation of a linked-list data structure with Fine Grained
+%Synchronization means that every item can be locked individually. The
+%nodes in the list are locked when read, not the entire data structure. Which
+%results in a list where Threads can operate at the same time. To achieve this
+%kind of synchronization, the locks have to be two folded. Which is also known 
+%as \emph{lock coupling}, Thread X can only acquire the lock for the current 
+%Node, if and only if it still has the lock for the previous Node.
 \begin{figure}[h]
 \centerline{
 \xymatrix{
@@ -77,13 +109,24 @@ Node, if and only if it still has the lock for the previous Node.
 }}
 \caption{linked-list coupled lock}
 \end{figure}
-If Thread X locks item 100 in the list, Thread Y can lock and thereby
+
+If thread X locks item 100 in the list, Thread Y can lock and thereby
 insert/delete any Node between the start item and the item 100. This
-also holds for any other Thread. But if Thread Y locks the first item in the
-list, Thread Z will not be able to insert or delete any nodes. So it stalls,
+also holds for any other thread. But if thread Y locks the first item in the
+list, thread Z will not be able to insert or delete any nodes. So it stalls,
 together with all the other Thread that may attempt to access the list.
 
 \subsection{Performance Hypothesis}
+If the amount of elements in the data structure is small, a small part of the
+list can be accessed by other threads. As the list grows, more items can be 
+inserted or deleted simultaneously. Threads block to items at once and block
+the road for other threads. But if the list contains more items the threads
+will have a greater working area. So the amount of elements that can be inserted/deleted 
+per time unit grows.
+
+The hypothesis is that the performance of the list increases when the list 
+grows. 
+
 \todo[inline]{write this}
 \begin{itemize}
  \item $\#e$:  if $\#e$ grows and $\#t$ stays equal, 
