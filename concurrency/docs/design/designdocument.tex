@@ -19,49 +19,25 @@
 
 \section{Coarse Grained List}
 \subsection{Implementation}
-    The coarse grained list is a linked list. One lock is used to provide a concurrent data structure. All threads will have to acquire this lock before operating the list and unlock it after. 
+    The coarse grained list is a linked list with one lock to provide a concurrent data structure. All threads will have to acquire this lock before operating the list and unlock it afterwards. This forces only one thread operating on the list at the time. A pseudocode example of the add and remove function looks as follows:
    
 \begin{lstlisting}
-    insert(e) 
+    add(e) 
         lock()
-        add(e) // add the elemen to the listt
+        insert(e) // insert the element to the list
         unlock()
 
     remove(e)
         lock()
-        rm(e)  // remove the elemen from the list
+        rm(e)     // remove the element from the list
         unlock()
 \end{lstlisting}
 
-\begin{figure}[!h]
-\centerline{
-    \xymatrix {
-        head \ar[r] & ... \ar[r] & tail
-        \save "1,1"."1,3"*+[F.]\frm{} \restore
-    }
-    %\xymatrix @R=1pc {
-    %    1,1 & *+[F]{head} \ar[r] & 1,3 & *+[F]{tail} & 1,5
-    %    \\2,1 & 2,2 & 2,3 & 2,4 & 2,5
-    %    \save "1,2"."2,4"*++[F]\frm{}
-    %    \ar"1,1" \ar"2,1" \ar"1,5" \ar"2,5" \restore
-    %}
-}
-\caption{linked-list coupled lock}
-\end{figure}
-    
 \subsection{Performance Hypothesis}
-%Let $\#e$ be the number of elements to add or delete, $\#t$ the amount of threads
-%that work with this data structure and $\#w$ the amount of work per Thread in
-%comparison to inserting/deleting nodes. By letting one value to stay the same
-%and to other to grow, we can make a hypothesis about the performance of the
-%implementation of the synchronization in combination with the data structure.
-%\begin{itemize}
-%\item $\#e$: if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the performance.
-%    i.e. more lookups, more work
-% \item $\#t$: if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
-% \item $\#w$: 
-%    \todo[inline]{Needs to be filled in, I don't yet know}
-%\end{itemize}
+As only one thread will be able to operate the list at the time other threads will be waiting. Increasing the number of elements in the list will increase the lookup time on the list. If the operating time increases so does the waiting time of all other threads. More elements will therefore decrease the performance of the coarse grained list.
+
+Locking once is cheap. If there are no threads that want to operate on the list simultaneously the performance will be high; one lock operation per add or remove operation. 
+With high amount of threads the chance of simultaneous arrival will be high. This results in long waiting time. For high amount of threads the performance will therefore decrease. 
 
 \section{Coarse Grained Tree}
 \subsection{Implementation}
