@@ -19,7 +19,7 @@
 
 \section{Coarse Grained List}
 \subsection{Implementation}
-    The coarse grained list is a linked list with one lock to provide a concurrent data structure. All threads will have to acquire this lock before operating the list and unlock it afterwards. This forces only one thread operating on the list at the time. A pseudocode example of the add and remove function looks as follows:
+    The coarse grained list is a linked list with one lock to provide a concurrent data structure. Before operating on the list threads have to acquire this lock and unlock it afterwards. This forces only one thread operating on the list at a given time. A simple pseudocode example of the add and remove function looks as follows:
    
 \begin{lstlisting}
     add(e) 
@@ -33,61 +33,24 @@
         unlock()
 \end{lstlisting}
 
+The insert and rm functions are the equivalent of the sequential add and remove functions.
+
 \subsection{Performance Hypothesis}
-%   <<<<<<< head
-%   let $\#e$ be the number of elements in the data structure, $\#t$ the amount of threads
-%   that work with this data structure and $\#w$ the amount of work per thread in
-%   comparison to inserting/deleting nodes. by letting one value to stay the same
-%   and to other to grow, we can make a hypothesis about the performance of the
-%   implementation of the synchronization in combination with the data structure.
-%   \begin{itemize}
-%   \item $\#e$: if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the performance.
-%       i.e. more lookups, more work
-%    \item $\#t$: if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
-%    \item $\#w$: 
-%   \end{itemize}
-As only one thread will be able to operate the list at the time other threads will be waiting. Increasing the number of elements in the list will increase the lookup time on the list. If the operating time increases so does the waiting time of all other threads. More elements will therefore decrease the performance of the coarse grained list.
+One thread will be able to operate on the list at the time. Other threads will be stuck at acquiring the lock. Increasing the number of elements will increase the lookup time. If the operating time increases so does the waiting time of all other threads. More elements should therefore decrease the performance of the coarse grained list.
 
 Locking once is cheap. If there are no threads that want to operate on the list simultaneously the performance will be high; one lock operation per add or remove operation. 
-With high amount of threads the chance of simultaneous arrival will be high. This results in long waiting time. For high amount of threads the performance will therefore decrease. 
+With high amount of threads the chance of simultaneous arrival will be high. Since arrived thread $n$ has to wait for $n-1$ threads waiting times are long. For high amount of threads the performance will therefore decrease. 
 
 \section{Coarse Grained Tree}
 \subsection{Implementation}
-%The Course Grained synchronization in a tree also locks the entire
-%data structure. By inserting an item the lookup and inserting will have to
-%require a lock. Thread Y also needs to wait until
-%Thread X is done with these operation for inserting and deleting.
-
-The coarse grained tree is a binary tree which uses one lock to provide a concurrent data structure.
-
-    \begin{lstlisting}
-        insert(E e) 
-            lock()
-            add(E e) // add the element
-            unlock()
-
-        remove(E e)
-            lock()
-            rm(E e)  // remove the element
-            unlock()
-    \end{lstlisting}
+The coarse grained tree is a binary tree which uses one lock to provide a concurrent data structure. Threads operating the tree will have to acquire this lock before they can do any operations on it. A pseudocode example would look the same as with the coarse grained list. Although the insert and rm function would be implemented for a binary tree.
 
 \subsection{Performance Hypothesis}
-%\begin{itemize}
-% \item $\#e$:   if $\#e$ grows and $\#t$ stays equal, only the lookup could influence the
-% performance. \\ i.e. more lookups, more work
-% \item $\#t$:   if $\#t$ grows and $\#e$ stays equal, there will be no influence on the performance.
-% \item $\#w$:   \todo[inline]{needs to be filled in}
-%\end{itemize}
+The same performance hypotheses for the coarse grained list holds for the coarse grained tree. The difference in performance lies in the data structure. The lookup on the list is of complexity $O(n)$. A balanced tree has a lookup complexity of $O(log(n))$. The assignment didn't specify the tree to be balanced. The worst case lookup on the tree is therefore still $O(n)$, but it should have better average performance.
 
 \section{Fine Grained List}
-%The concurrent implementation of a linked-list data structure with Fine Grained
-%Synchronization means that every item can be locked individually. The
-%nodes in the list are locked when read, not the entire data structure. Which
-%results in a list where Threads can operate at the same time. To achieve this
-%kind of synchronization, the locks have to be two folded. Which is also known 
-%as \emph{lock coupling}, Thread X can only acquire the lock for the current 
-%Node, if and only if it still has the lock for the previous Node.
+The fined grained list uses one lock per element. Before using an element the corresponding lock should be acquired.
+
 \begin{figure}[h]
 \centerline{
 \xymatrix{
