@@ -103,26 +103,45 @@ If thread X locks item 100 in the list, Thread Y can lock and thereby
 insert/delete any Node between the start item and the item 100. This
 also holds for any other thread. But if thread Y locks the first item in the
 list, thread Z will not be able to insert or delete any nodes. So it stalls,
-together with all the other Thread that may attempt to access the list.
+together with all the other thread that may attempt to access the list.
 
 \subsection{Performance Hypothesis}
 If the amount of elements in the data structure is small, a small part of the
 list can be accessed by other threads. As the list grows, more items can be 
-inserted or deleted simultaneously. Threads block to items at once and block
-the road for other threads. But if the list contains more items the threads
-will have a greater working area. So the amount of elements that can be inserted/deleted 
+inserted or deleted simultaneously. If the list contains more items the threads
+will have a greater working area, since the locks are per item and not on the
+data structure itself. So the amount of elements that can be inserted/deleted 
 per time unit grows.
-The hypothesis is that the performance of the list increases when the list 
-grows. 
+The hypothesis is that the performance of the list increases when number of
+items in the list rises.
 
-The amount of work performed by a thread to able to insert or delete variates.
-It depends on the length of the list and how many lookups have to performed
-before deletion. For every lookup, one lock has to performed. This can
+The amount of work performed by a thread, to be able to insert or delete, variates.
+It depends on the length of the list and how many lookups have to be performed
+before deletion. For every lookup, at least one lock and unlock has to performed. This can
 influence the performance in a negative way. In worst-case the elements that
 are added to the list are already sorted, this means N lookups have to be
-performed for a list of N items.
+performed for a list of N items, since they are added to the end of the list.
 
 \section{Fine Grained Tree}
+In this binary tree the locks are obtained in the same manner as a fine grained
+list. But now the next Node will be the left or right neighbour, so in fact the
+lookup changes. 
+
+\subsection{Performance Hypothesis}
+Threads will not block progress for all other items in the binary tree. This
+means concurrent progress is possible on different parts of the tree.
+The hypothesis is that when the amount of items
+in the binary tree increases, more and more threads can work at the same time
+on different parts of the tree and therefore the performance of the tree increases.
+Because of the fact that more parts of the data structure can be accessed by
+threads the concurrency rises and thereby the amount of items that can be added
+per time unit increases.
+
+\todo[inline]{something about deletion performance, more locks etc.}
+
+\section{Lock Free List}
+
+\section{Lock Free Tree}
 
 
 \end{document}
