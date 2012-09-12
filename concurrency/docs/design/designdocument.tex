@@ -137,8 +137,7 @@ can be added per time unit increases.
 
 \section{Lock Free List}
 \subsection{Implementation}
-Lock free lists can be
-implemented with an object that holds a reference to a node in the list and a
+Lock free lists can be implemented with an object that holds a reference to a node in the list and a
 Boolean ``mark''. The reference to the item is used to point to the next node,
 and the mark is used for marking an object for deletion. These fields can be
 atomically updated in the object. Marking objects for deletion fixes the
@@ -169,8 +168,27 @@ amount of threads.
 
 \section{Lock Free Tree}
 \subsection{Implementation}
-The lock free tree uses  
+The lock free tree uses compare and swap operations. Insert and delete
+operations on the tree require only a single child pointer change. Using a single CAS operation
+would fail with concurrent updates. The implementation uses therefore 3 CAS operations for an insert and
+4 for a delete. The idea is that when a CAS operation succeeds it stores enough information
+for other threads to complete the other CAS operations. This way a thread stuck at a marked node can help other
+threads and itself by performing the other threads operation. This enforces lock-freeness, but since
+a process could be doing someone else's work for ever it's not wait-free.
 
 \subsection{Performance Hypothesis}
+Since no thread is ever locked the performance should be better than with the fine grained tree. A slow
+thread will not slow down the performance since another thread can perform the work instead.
+
+When the amount of threads increases the chance of multiple operations on elements increases as well. Since
+threads help each other out a slow thread successfully completing the first CAS operation does not make other
+threads wait. This is different from the lock free list, where threads would have to retry. Our hypotheses will be that
+with enough threads running this will give very high performances. Enough threads are needed because with no concurrent
+threads operating the overhead of the algorithm can still be a bottleneck.
+
+Increasing the amount of elements of the list decreases the change of threads operating on the same element.
+While this does not decrease or increase the amount of operations on the tree it will increase the time each
+operation will take since less helping will be done.
+
 
 \end{document}
