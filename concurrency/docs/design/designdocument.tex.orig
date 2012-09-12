@@ -1,0 +1,214 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{todonotes}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{listings}
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+\author{Rik van der Kooij 2526314\\Richard Torenvliet 2526864}
+\title{Assignment 1 - Design Document}
+\begin{document}
+\maketitle
+
+%\section{Introduction}
+
+\section{Coarse Grained List}
+\subsection{Implementation}
+    The coarse grained list is a linked list with one lock to provide a
+    concurrent data structure. Before operating on the list threads have to
+    acquire this lock and unlock it afterwards. This forces only one thread
+    operating on the list at a given time. A simple pseudocode example of the
+    add and remove function looks as follows:
+<<<<<<< HEAD
+
+=======
+   
+>>>>>>> fine grained list
+\begin{lstlisting}
+    add(e) 
+        lock()
+        insert(e) // insert the element to the list
+        unlock()
+
+    remove(e)
+        lock()
+        rm(e)     // remove the element from the list
+        unlock()
+\end{lstlisting}
+
+The insert and rm functions are the equivalent of the sequential add and remove
+functions.
+
+\subsection{Performance Hypothesis}
+One thread will be able to operate on the list at the time. Other threads will
+be stuck at acquiring the lock. Increasing the number of elements will increase
+the lookup time. If the operating time increases so does the waiting time of
+all other threads. More elements should therefore decrease the performance of
+the coarse grained list.
+
+Locking once is cheap. If there are no threads that want to operate on the list
+simultaneously the performance will be high; one lock operation per add or
+remove operation.  With high amount of threads the chance of simultaneous
+arrival will be high. Since arrived thread $n$ has to wait for $n-1$ threads
+waiting times are long. For high amount of threads the performance will
+therefore decrease. 
+
+<<<<<<< HEAD
+\subsection{design}
+
+
+=======
+>>>>>>> fine grained list
+\section{Coarse Grained Tree} \subsection{Implementation} The coarse grained
+tree is a binary tree which uses one lock to provide a concurrent data
+structure. Threads operating the tree will have to acquire this lock before
+they can do any operations on it. A pseudocode example would look the same as
+with the coarse grained list. Although the insert and rm function would be
+implemented for a binary tree.
+
+\subsection{Performance Hypothesis} The same performance hypotheses for the
+coarse grained list holds for the coarse grained tree. The difference in
+performance lies in the data structure. The lookup on the list is of complexity
+$O(n)$. A balanced tree has a lookup complexity of $O(log(n))$. The assignment
+didn't specify the tree to be balanced. The worst case lookup on the tree is
+therefore still $O(n)$, but it should have better average performance.
+
+<<<<<<< HEAD
+\section{Fine Grained List} The fined grained list uses one lock per element.
+Before using an element the corresponding lock should be acquired.
+
+\begin{figure}[h] \centerline{ \xymatrix{ 1: &*+++[F=]{head} \ar[r] & *+++[F]{a
+pred} \ar[r] & *+++[F]{b curr} \\ &locked & \text{request lock} & ..  \\ 2:
+&*+++[F=]{head} \ar[r] & *+++[F=]{a pred} \ar[r] & *+++[F]{b curr} \\ &locked &
+locked & \text{request lock} }} \caption{linked-list coupled lock} \end{figure}
+
+If thread X locks item 100 in the list, Thread Y can lock and thereby
+insert/delete any Node between the start item and the item 100. This also holds
+for any other thread. But if thread Y locks the first item in the list, thread
+Z will not be able to insert or delete any nodes. So it stalls, together with
+all the other thread that may attempt to access the list.
+
+\subsection{Performance Hypothesis} If the amount of elements in the data
+structure is small, a small part of the list can be accessed by other threads.
+As the list grows, more items can be inserted or deleted simultaneously. If the
+list contains more items the threads will have a greater working area, since
+the locks are per item and not on the data structure itself. So the amount of
+elements that can be inserted/deleted per time unit grows.  The hypothesis is
+that the performance of the list increases when number of items in the list
+rises.
+
+The amount of work performed by a thread, to be able to insert or delete,
+variates. It depends on the length of the list and how many lookups have to be
+performed before deletion. For every lookup, at least one lock and unlock has
+to performed. This can influence the performance in a negative way. In
+worst-case the elements that are added to the list are already sorted, this
+means N lookups have to be performed for a list of N items, since they are
+added to the end of the list.
+
+\section{Fine Grained Tree} \section{Implementation} In this binary tree the
+locks are obtained in the same manner as a fine grained list. But now the next
+Node will be the left or right neighbour, so in fact the lookup changes. In
+the binary tree 
+
+\subsection{Performance Hypothesis} Threads will not block progress for all
+other items in the binary tree. This means concurrent progress is possible on
+different parts of the tree. The hypothesis is that when the amount of items
+=======
+\section{Fine Grained List} 
+\subsection{Implementation}
+The fine grained list uses one lock per list element. Before using an element the corresponding lock should be acquired.
+Locks of an element cannot be stored in the element itself. This would require us to read the element
+before locking. Maurice Herlihy and Nir Shavit solve this problem by adding sentinel head and tail elements.
+
+Inserting and deleting will be done by going through the list locking 2 elements at the time. 
+After finding the right element pointers will be set and locks freed. Figure \ref{fig:fine_insert} shows an
+example of how an insertion would be executed.
+
+\begin{figure}[h] 
+\centerline{ 
+    \xymatrix{ 1: &*+++[F=]{head} \ar[r] & *+++[F]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               2: &*+++[F=]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               3: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               4: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F=]{28} \ar[r] & *+++[F]{tail}\\
+               5: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r]& *+++[F]{23} \ar[r] & *+++[F=]{28} \ar[r] & *+++[F]{tail}\\
+               6: &*+++[F]{head} \ar[r] & *+++[F]{20} \ar[r]& *+++[F]{23} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+           }}
+    \caption{Insert example on fine grained list}
+    \label{fig:fine_insert}
+\end{figure}
+
+Slow threads won't prevend all other threads from operating. If thread X locks 
+item 100 in the list another thread Y can lock all elements 1 to 99. This allows thread y
+to operate on those elements.
+
+\subsection{Performance Hypothesis}
+If the amount of elements in the data structure is small, a small part of the list can be accessed by other threads.
+As the list grows, more items can be inserted or deleted simultaneously. If the
+list contains more items the threads will have a greater working area, since
+the locks are per item and not on the data structure itself. So the amount of
+elements that can be inserted/deleted per time unit grows. The hypothesis is
+that the performance of the list increases when number of items in the list
+rises.
+
+The amount of work performed by a thread variates. It depends on the length of the list and how many lookups have to be
+performed before deletion. For every lookup, at least two locks and unlocks has
+to be performed. This can influence the performance in a negative way. In
+worst-case the elements that are added to the list are already sorted, this
+means N lookups have to be performed for a list of N items, since they are
+added to the end of the list. Locking will become a bottleneck when small
+amount of threads want to operate at the same.
+
+\section{Fine Grained Tree} In this binary tree the locks are obtained in the
+same manner as a fine grained list. But now the next Node will be the left or
+right neighbour, so in fact the lookup changes. 
+
+\subsection{Performance Hypothesis} Threads will not block progress for all
+other items in the binary tree. This means concurrent progress is possible on
+different parts of the tree.  The hypothesis is that when the amount of items
+>>>>>>> fine grained list
+in the binary tree increases, more and more threads can work at the same time
+on different parts of the tree and therefore the performance of the tree
+increases.  Because of the fact that more parts of the data structure can be
+accessed by threads the concurrency rises and thereby the amount of items that
+can be added per time unit increases.
+
+\todo[inline]{something about deletion performance, more locks etc.}
+
+<<<<<<< HEAD
+\section{Lock Free List} \section{Implementation} Lock free lists can be
+implemented with an object that holds a reference to a node in the list and a
+Boolean ``mark''. The reference to the item is used to point to the next node,
+and the mark is used for marking an object for deletion. These fields can be
+atomically updated in the object. Marking objects for deletion fixes the
+problem of deleting a reference while another thread uses that node to add a
+new node to the list. Now, other threads that perform the add() or remove()
+function will remove nodes that are marked. Because the add() and remove()
+functions both delete all the marked nodes, an abstraction can be made. A so
+called Window() object. This object can carry out this functionality and it
+only retrieves the pred and curr when all the objects that are marked for deletion,
+prior to the node of interest, are removed. The remove() uses the
+pred and curr to mark the curr for deletion(atomically) and the add() function
+uses pred and curr to insert a new node between them.
+
+\section{Performance Hypothesis}
+
+=======
+\section{Lock Free List}
+Lock free lists take use of the AtomicMarkableReference object in Java. Every
+node is now of that kind. The object has two fields, a reference to an object
+of type T and a ``mark'' bit. Which is used to mark objects for removal. This
+solves the problem of incorrect execution when only using the CompareAndSet()
+mechanism. 
+
+The AtomicMarkableReference is used in combination with lazy synchronization.
+It marks
+>>>>>>> fine grained list
+
+\section{Lock Free Tree}
+
+
+\end{document}

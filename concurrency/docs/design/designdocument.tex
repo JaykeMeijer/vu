@@ -69,14 +69,14 @@ therefore still $O(n)$, but it should have better average performance.
 
 \section{Fine Grained List} \subsection{Implementation} The fine grained list
 uses one lock per list element. Before using an element the corresponding lock
-should be acquired.  Locks of an element cannot be stored in the element
+should be acquired. Locks of an element cannot be stored in the element
 itself. This would require us to read the element before locking. Maurice
 Herlihy and Nir Shavit solve this problem by adding sentinel head and tail
 elements.
 
-Inserting and deleting will be done by going through the list locking 2
-elements at the time.  After finding the right element pointers will be set and
-locks freed. Figure \ref{fig:fine_insert} shows an example of how an insertion
+Inserting and deleting will be done by going through the list and locking two
+elements at a time. After the locks are acquired, the pointers will be set and
+locks will be freed. Figure \ref{fig:fine_insert} shows an example of how an insertion
 would be executed.
 
 \begin{figure}[h] 
@@ -92,9 +92,9 @@ would be executed.
     \label{fig:fine_insert}
 \end{figure}
 
-Slow threads won't prevend all other threads from operating. If thread X locks
-item 100 in the list another thread Y can lock all elements 1 to 99. This
-allows thread y to operate on those elements.
+Slow threads won't prevent all other threads from operating. If thread X locks 
+item 100 in the list another thread Y can lock all elements 1 to 99. This allows thread Y
+to operate on those elements.
 
 \subsection{Performance Hypothesis} If the amount of elements in the data
 structure is small, a small part of the list can be accessed by other threads.
@@ -113,22 +113,31 @@ the list are already sorted, this means N lookups have to be performed for a
 list of N items, since they are added to the end of the list. Locking will
 become a bottleneck when small amount of threads want to operate at the same.
 
-\section{Fine Grained Tree} In this binary tree the locks are obtained in the
-same manner as a fine grained list. But now the next Node will be the left or
-right neighbour, so in fact the lookup changes. 
+\section{Fine Grained Tree} 
+\section{Implementation}
+The fine grained tree also uses an lock for every
+element.  The locks are obtained in the same manner as by the fine grained
+list. But now the next Node will be the left or right neighbour, so in fact the
+lookup changes. 
 
-\subsection{Performance Hypothesis} Threads will not block progress for all
+Locks will be acquired in a downward fashion. It is therefore not possible for
+deadlock to occur without threads crashes.
+
+\subsection{Performance Hypothesis}
+Threads will not block progress for all
 other items in the binary tree. This means concurrent progress is possible on
 different parts of the tree.  The hypothesis is that when the amount of items
 in the binary tree increases, more and more threads can work at the same time
 on different parts of the tree and therefore the performance of the tree
-increases.  Because of the fact that more parts of the data structure can be
+increases. Because of the fact that more parts of the data structure can be
 accessed by threads the concurrency rises and thereby the amount of items that
 can be added per time unit increases.
 
-\todo[inline]{something about deletion performance, more locks etc.}
+%\todo[inline]{something about deletion performance, more locks etc.}
 
-\section{Lock Free List} \section{Implementation} Lock free lists can be
+\section{Lock Free List}
+\subsection{Implementation}
+Lock free lists can be
 implemented with an object that holds a reference to a node in the list and a
 Boolean ``mark''. The reference to the item is used to point to the next node,
 and the mark is used for marking an object for deletion. These fields can be
@@ -144,10 +153,24 @@ pred and curr to mark the curr for deletion(atomically) and deletes current
 node by setting the reference of the pred.next to the successor of curr. The
 add() function uses pred and curr to insert a new node between them.
 
-\section{Performance Hypothesis}
+\subsection{Performance Hypothesis}
+The lock free list should perform better than the fine grained list. Where slow threads
+could hold up other threads at the fine grained list, the lock free list does not support 
+this behavior. This is because the add and remove functions are lock-free.
+
+Lookups on the lock free list are very cheap since it is wait-free. The bottleneck of the 
+algorithm is when a thread has to retry. This happens when multiple threads want to operating the same element.
+Increasing the amount of threads increases the chance to threads want to operate an element at the same time.
+The same way, if the amount of elements increases the chance of two threads arriving
+at the same element will be lower. Our hypothesis will be that the 
+performance will be high when the of elements will be high compared to the
+amount of threads.
 
 
 \section{Lock Free Tree}
+\subsection{Implementation}
+The lock free tree uses  
 
+\subsection{Performance Hypothesis}
 
 \end{document}
