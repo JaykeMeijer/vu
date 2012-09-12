@@ -128,10 +128,11 @@ new node to the list. Now, other threads that perform the add() or remove()
 function will remove nodes that are marked. Because the add() and remove()
 functions both delete all the marked nodes, an abstraction can be made. A so
 called Window() object. This object can carry out this functionality and it
-only retrieves the pred and curr when all the objects that are marked for deletion,
-prior to the node of interest, are removed. The remove() uses the
-pred and curr to mark the curr for deletion(atomically) and the add() function
-uses pred and curr to insert a new node between them.
+only retrieves the pred and curr when all the objects that are marked for
+deletion, prior to the node of interest, are removed. The remove() uses the
+pred and curr to mark the curr for deletion(atomically) and deletes current
+node by setting the reference of the pred.next to the successor of curr. The
+add() function uses pred and curr to insert a new node between them.
 
 \section{Performance Hypothesis}
 
