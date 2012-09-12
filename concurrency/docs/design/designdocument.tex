@@ -24,7 +24,7 @@
     acquire this lock and unlock it afterwards. This forces only one thread
     operating on the list at a given time. A simple pseudocode example of the
     add and remove function looks as follows:
-   
+
 \begin{lstlisting}
     add(e) 
         lock()
@@ -53,6 +53,9 @@ remove operation.  With high amount of threads the chance of simultaneous
 arrival will be high. Since arrived thread $n$ has to wait for $n-1$ threads
 waiting times are long. For high amount of threads the performance will
 therefore decrease. 
+
+\subsection{design}
+
 
 \section{Coarse Grained Tree} \subsection{Implementation} The coarse grained
 tree is a binary tree which uses one lock to provide a concurrent data
@@ -99,13 +102,14 @@ worst-case the elements that are added to the list are already sorted, this
 means N lookups have to be performed for a list of N items, since they are
 added to the end of the list.
 
-\section{Fine Grained Tree} In this binary tree the locks are obtained in the
-same manner as a fine grained list. But now the next Node will be the left or
-right neighbour, so in fact the lookup changes. 
+\section{Fine Grained Tree} \section{Implementation} In this binary tree the
+locks are obtained in the same manner as a fine grained list. But now the next
+Node will be the left or right neighbour, so in fact the lookup changes. In
+the binary tree 
 
 \subsection{Performance Hypothesis} Threads will not block progress for all
 other items in the binary tree. This means concurrent progress is possible on
-different parts of the tree.  The hypothesis is that when the amount of items
+different parts of the tree. The hypothesis is that when the amount of items
 in the binary tree increases, more and more threads can work at the same time
 on different parts of the tree and therefore the performance of the tree
 increases.  Because of the fact that more parts of the data structure can be
@@ -114,15 +118,16 @@ can be added per time unit increases.
 
 \todo[inline]{something about deletion performance, more locks etc.}
 
-\section{Lock Free List}
-Lock free lists take use of the AtomicMarkableReference object in Java. Every
-node is now of that kind. The object has two fields, a reference to an object
-of type T and a ``mark'' bit. Which is used to mark objects for removal. This
-solves the problem of incorrect execution when only using the CompareAndSet()
-mechanism. 
+\section{Lock Free List} \section{Implementation} Lock free lists can be
+implemented with an object that holds a reference to a node in the list and a
+Boolean ``mark''. The reference to the item is used to point to the next node,
+and the mark is used for marking an object for deletion. These fields can be
+atomically updated in the object. Marking objects for deletion fixes the
+problem of deleting a reference while another thread uses that node to add a
+new node to the list. Now, other threads that perform the add() or remove() 
+function will remove nodes that are marked, but can not traverse them.
 
-The AtomicMarkableReference is used in combination with lazy synchronization.
-It marks
+..
 
 \section{Lock Free Tree}
 
