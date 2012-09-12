@@ -16,7 +16,6 @@
 
 %\section{Introduction}
 
-
 \section{Coarse Grained List}
 \subsection{Implementation}
     The coarse grained list is a linked list with one lock to provide a
@@ -54,9 +53,6 @@ arrival will be high. Since arrived thread $n$ has to wait for $n-1$ threads
 waiting times are long. For high amount of threads the performance will
 therefore decrease. 
 
-\subsection{design}
-
-
 \section{Coarse Grained Tree} \subsection{Implementation} The coarse grained
 tree is a binary tree which uses one lock to provide a concurrent data
 structure. Threads operating the tree will have to acquire this lock before
@@ -71,45 +67,57 @@ $O(n)$. A balanced tree has a lookup complexity of $O(log(n))$. The assignment
 didn't specify the tree to be balanced. The worst case lookup on the tree is
 therefore still $O(n)$, but it should have better average performance.
 
-\section{Fine Grained List} The fined grained list uses one lock per element.
-Before using an element the corresponding lock should be acquired.
+\section{Fine Grained List} 
+\subsection{Implementation}
+The fine grained list uses one lock per list element. Before using an element the corresponding lock should be acquired.
+Locks of an element cannot be stored in the element itself. This would require us to read the element
+before locking. Maurice Herlihy and Nir Shavit solve this problem by adding sentinel head and tail elements.
 
-\begin{figure}[h] \centerline{ \xymatrix{ 1: &*+++[F=]{head} \ar[r] & *+++[F]{a
-pred} \ar[r] & *+++[F]{b curr} \\ &locked & \text{request lock} & ..  \\ 2:
-&*+++[F=]{head} \ar[r] & *+++[F=]{a pred} \ar[r] & *+++[F]{b curr} \\ &locked &
-locked & \text{request lock} }} \caption{linked-list coupled lock} \end{figure}
+Inserting and deleting will be done by going through the list locking 2 elements at the time. 
+After finding the right element pointers will be set and locks freed. Figure \ref{fig:fine_insert} shows an
+example of how an insertion would be executed.
 
-If thread X locks item 100 in the list, Thread Y can lock and thereby
-insert/delete any Node between the start item and the item 100. This also holds
-for any other thread. But if thread Y locks the first item in the list, thread
-Z will not be able to insert or delete any nodes. So it stalls, together with
-all the other thread that may attempt to access the list.
+\begin{figure}[h] 
+\centerline{ 
+    \xymatrix{ 1: &*+++[F=]{head} \ar[r] & *+++[F]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               2: &*+++[F=]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               3: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+               4: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r] & *+++[F=]{28} \ar[r] & *+++[F]{tail}\\
+               5: &*+++[F]{head} \ar[r] & *+++[F=]{20} \ar[r]& *+++[F]{23} \ar[r] & *+++[F=]{28} \ar[r] & *+++[F]{tail}\\
+               6: &*+++[F]{head} \ar[r] & *+++[F]{20} \ar[r]& *+++[F]{23} \ar[r] & *+++[F]{28} \ar[r] & *+++[F]{tail}\\
+           }}
+    \caption{Insert example on fine grained list}
+    \label{fig:fine_insert}
+\end{figure}
 
-\subsection{Performance Hypothesis} If the amount of elements in the data
-structure is small, a small part of the list can be accessed by other threads.
+Slow threads won't prevend all other threads from operating. If thread X locks 
+item 100 in the list another thread Y can lock all elements 1 to 99. This allows thread y
+to operate on those elements.
+
+\subsection{Performance Hypothesis}
+If the amount of elements in the data structure is small, a small part of the list can be accessed by other threads.
 As the list grows, more items can be inserted or deleted simultaneously. If the
 list contains more items the threads will have a greater working area, since
 the locks are per item and not on the data structure itself. So the amount of
-elements that can be inserted/deleted per time unit grows.  The hypothesis is
+elements that can be inserted/deleted per time unit grows. The hypothesis is
 that the performance of the list increases when number of items in the list
 rises.
 
-The amount of work performed by a thread, to be able to insert or delete,
-variates. It depends on the length of the list and how many lookups have to be
-performed before deletion. For every lookup, at least one lock and unlock has
-to performed. This can influence the performance in a negative way. In
+The amount of work performed by a thread variates. It depends on the length of the list and how many lookups have to be
+performed before deletion. For every lookup, at least two locks and unlocks has
+to be performed. This can influence the performance in a negative way. In
 worst-case the elements that are added to the list are already sorted, this
 means N lookups have to be performed for a list of N items, since they are
-added to the end of the list.
+added to the end of the list. Locking will become a bottleneck when small
+amount of threads want to operate at the same.
 
-\section{Fine Grained Tree} \section{Implementation} In this binary tree the
-locks are obtained in the same manner as a fine grained list. But now the next
-Node will be the left or right neighbour, so in fact the lookup changes. In
-the binary tree 
+\section{Fine Grained Tree} In this binary tree the locks are obtained in the
+same manner as a fine grained list. But now the next Node will be the left or
+right neighbour, so in fact the lookup changes. 
 
 \subsection{Performance Hypothesis} Threads will not block progress for all
 other items in the binary tree. This means concurrent progress is possible on
-different parts of the tree. The hypothesis is that when the amount of items
+different parts of the tree.  The hypothesis is that when the amount of items
 in the binary tree increases, more and more threads can work at the same time
 on different parts of the tree and therefore the performance of the tree
 increases.  Because of the fact that more parts of the data structure can be
@@ -135,9 +143,7 @@ uses pred and curr to insert a new node between them.
 
 \section{Performance Hypothesis}
 
-
 \section{Lock Free Tree}
 
 
 \end{document}
-
