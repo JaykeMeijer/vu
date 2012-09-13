@@ -31,3 +31,14 @@
 *.out
 *.synctex.gz
 *.pdf
+
+# Executables #
+# Internet programming #
+mysh1
+mysh2
+mysh3
+syn1
+syn2
+syn
+thread1
+synthread2
