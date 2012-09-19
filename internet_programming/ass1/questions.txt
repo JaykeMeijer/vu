@@ -1,0 +1,7 @@
+Questions:
+
+A: The shell has to create 2 new processes. One pipe has to be created. The shell has to wait til the first created child has ended.
+B: No, commands need to start as a new process. A thread alone is not possible of doing this.
+C: No, the cd command is not a 'external' command. This is because it's impossible to modify the working directory as a child process.
+
+
