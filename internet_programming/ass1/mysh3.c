@@ -4,18 +4,31 @@
 #include <unistd.h>
 #include <sys/types.h>
 
+void print(char** args)
+{
+    int i = 0;
+    printf("-bash: ");
+        printf("%s ", args[i++]);
+        printf("%d ", args != 0);
+    printf(": command not found\n");
+    fflush(stdout);
+
+}
+
 int process_input(char* input, char** args, char** args2)
 {
     int i = 0, j = 0;
     char *token = strtok(input, " ");
 
     do {
-        if(!strcmp(token, "|"))
-            j = i;
+        if(!strcmp(token, "|")) {
+            j = i++;
+            continue;
+        }
 
         if(!j)
             args[i] = token;
-        if(j && j != i)
+        if(j)
             args2[i-j-1] = token;
         i++;
     } while(token = strtok(NULL, " "));
@@ -59,17 +72,19 @@ int main(int argc, const char* argv[])
                     close(fd[0]);
                     dup2(fd[1], 1);
                     execvp(args[0], args);
+                    print(args);
                 }
                 else { // i read
                     close(fd[1]);
                     dup2(fd[0], 0);
                     execvp(args2[0], args2);
+                    print(args2);
                 }
             }
             else {
                 execvp(args[0], args);
+                printf("-bash: %s: command not found\n", input);
             }
-            printf("[%d] -bash: %s: command not found\n", child_id, input);
             break;
         }
         else if(child_id > 0)
