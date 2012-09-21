@@ -1,8 +1,18 @@
+/*  Assignment 1 - Unix Multiprocessing
+ *  syn2.java 
+ *
+ * author:   Rik van der Kooij
+ * VUnet-ID: rkj800
+ * date:     21-09-2012
+ */
+
 public class syn2 {
-    public static volatile int ab = 1;
-    public static volatile int cd = 0;
+    /* mutex and flag object for mutual exclusion */
+    public static Object mutex = new Object();
+    public static Boolean flag = new Boolean(true);
 
     public static void main(String[] args) {
+        /* create thread objects */
         syn2.PrintThread hello = new syn2.PrintThread("ab");
         syn2.PrintThread bonjour = new syn2.PrintThread("cd\n");
 
@@ -10,22 +20,36 @@ public class syn2 {
         bonjour.start();
     }
     
-    public static void lockDisplay(String message) {
-        Boolean a = message == "ab";
-
+    /* locking display function for thread printing "ab" */
+    public static void lockDisplayAB(String message) {
         try {
             for(int i = 0; i < 10; i++) {
-                if(a)
-                    while(ab == 0);
-                else
-                    while(cd == 0);
-                syn2.display(message);
-                if(a) {
-                    ab = 0;
-                    cd = 1;
-                } else {
-                    cd = 0;
-                    ab = 1;
+                /* acquire lock */
+                synchronized(mutex) {
+                    syn2.display(message);  /* display message */
+                    flag = false;           /* set flag */
+                    mutex.notify();         /* notify cd thread */
+                    while(!flag)
+                        mutex.wait();       /* wait for signal or flag */
+                }
+            }
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+    
+    /* locking display function for thread printing "cd\n" */
+    public static void lockDisplayCD(String message) {
+        try {
+            for(int i = 0; i < 10; i++) {
+                /* acquire lock */
+                synchronized(mutex) {
+                    while(flag)             /* wait for signal or flag */
+                        mutex.wait();
+                    syn2.display(message);  /* display message */
+                    flag = true;            /* set flag */
+                    mutex.notify();         /* signal ab thread */
                 }
             }
         }
@@ -34,6 +58,7 @@ public class syn2 {
         }
     }
 
+    /* display function revised for java */
     public static void display(String str)
     { 
         for(int i = 0; i < str.length(); i++) {
@@ -46,6 +71,7 @@ public class syn2 {
         }
     }
 
+    /* thread class for displaying the strings */
     private static class PrintThread extends Thread {
         String message;
 
@@ -54,7 +80,11 @@ public class syn2 {
         }
 
         public void run() {
-            syn2.lockDisplay(this.message);
+            /* use the correct lockDisplayXX method */
+            if(this.message == "ab")
+                syn2.lockDisplayAB(this.message);
+            else
+                syn2.lockDisplayCD(this.message);
         }
     }
 }
