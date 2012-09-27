@@ -13,7 +13,7 @@
 #include <sys/types.h>
 
 /* get the arguments from the input */
-void process_input(char* input, char** args)
+void get_arguments(char* input, char** args)
 {
     int i = 0;
     char *token = strtok(input, " ");
@@ -47,7 +47,7 @@ int main(int argc, const char* argv[])
         input[strlen(input) - 1] = '\0';
 
         /* create argument array */
-        process_input(input, args);
+        get_arguments(input, args);
 
         child_id = fork();
 

@@ -1,0 +1,84 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{todonotes}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{listings}
+\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+\title{Internet Programming\\Unix Multiprocessing}
+\author{Rik van der Kooij - rkj800 - 2526314}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+All programs have been tested on the VU machine fluit.few.vu.nl. All the programs can be compiled using the Makefile: make. Running the c programs by ./prog\_name.
+
+I saw that a shell script was needed for the Java programs. I looked in to it, but didn't find how I could set the CLASSPATH in time. The shell script run.sh therefor only starts both the Java programs and nothing else.
+
+\section{Shell}
+\subsection{mysh1}
+Mysh1 should be able to run programs from the directories in the PATH variable. Choosing between execlp and execvp would not have made a difference. I chose execvp to have consistency among the different shell programs. I have chosen to let the child execute the command so that the parent can wait for its termination.
+
+\subsection{mysh2}
+Mysh2 only adds an additional method to split the arguments from the user input. The arguments are obviously used for the execvp function.
+
+\subsection{mysh3}
+Mysh3 add an extra process\_input method to split piped commands. Piped commands need two processes which need two fork calls. I have chosen to let the child call the second fork. The grandchild would do the first command and child the first. This way the parent should only have to wait for the child.
+
+\subsection{questions}
+\subsubsection{A}
+The shell has to create two processes and one pipe. When pipes are used correct, second process uses input of the first, it only has to wait for the second command to finish since it should always finish last. Input with two random commands might need waiting on the first child: "sleep 3 | ls". 
+
+Since I implemented mysh3 to create a grandchild the 'parent' is not able to wait for the grandchild to finish. I do not think reworking the code is really important for the assignment.
+
+\subsubsection{B}
+No, the commands given can only run as a 'standalone' process.
+
+\subsubsection{C}
+No, the cd command should be implemented in the shell itself. Shell commands spawn new processes, but a child process cannot change the working directory of its parent.
+
+\section{Synchronization}
+\subsection{a}
+The program creates two processes which simultaneously try to print a string, one character at the time.
+
+\subsubsection{D}
+Synchronization in the form of mutual exclusion is required, because the display method is a critical section which only one process/thread should have access to at the same time. Locking synchronization primitives should be used. Locking before and unlocking after using the display method is the way to use the lock.
+
+\subsubsection{syn1.c}
+Semaphores can be used as inter-process synchronization primitive. Semaphores are numbers which should be decreased when 'locking' and decreased when 'unlocking'. Initializing a semaphore with 1 creates mutual exclusion for two processes.
+
+\subsubsection{synthread1.c}
+The pthread implementation uses a mutex for locking.
+
+\subsubsection{syn1.Java}
+The Java threads implementation uses an object for locking. Simple locking before and unlocking after using the display method is done by the synchronized keyword around the object.
+
+\subsection{b}
+The program creates two processes which simultaneously try to print a string, one character at the time.
+
+\subsubsection{E}
+The display method should not only have mutual exclusion, but has to be called one after the other. Synchronization using ordering constraints is needed. 
+
+\subsubsection{syn2.c}
+Two semaphores are used as synchronization primitives. One semaphore is initialized as 1 other as 0. The two processes `down' one of the semaphores and `up' the other. This way ordering is guaranteed.
+
+\subsubsection{synthread2.c}
+To create ordering in threads I used conditional variables, a mutex and a flag variable. The threads should have acquired the lock, but the flag should also have the right value. Signaling is used to wake the other waiting thread up.
+
+\subsubsection{syn2.Java}
+I started the Java implementation with two volatile integers and two while statements. This worked like a charm, but since the lecture talked about     wait and notify methods I used those instead.
+
+The idea is the same as with the synthread implementation, but the Java does not require conditional variables as the wait and notify functions do not have parameters.
+
+
+\end{document}
+
+
+
+
+
+
