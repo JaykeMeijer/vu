@@ -1,0 +1,4 @@
+compile met:    ant
+run met:        sh bin/test_data_structures <data_structure> <nrThreads> <nrItems> <workTime>
+
+bijv simpel     sh bin/test_data_structures cgl 2 100 10
