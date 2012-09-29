@@ -1,5 +1,5 @@
 /*  Assignment 2 - Distributed Programming with Sockets
- *  serv1.c
+ *  serv2.c
  *
  * author:   Rik van der Kooij
  * VUnet-ID: rkj800
@@ -8,9 +8,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/sem.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <errno.h>
@@ -49,12 +52,13 @@ ssize_t writen(int fd, const void *vptr, size_t n)
 int main(int argc, const char *argv[])
 {
     int socket_fd, child_fd,
-        counter = 1, optval = 1,
+        counter = 0, optval = 1,
         tmp, error;
 
     struct sockaddr_in addr;
     size_t n;
     socklen_t len;
+    pid_t child_id;
 
     /* create socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -77,17 +81,27 @@ int main(int argc, const char *argv[])
     error = listen(socket_fd, 5);
     error_handling(error, "socket listen error");
 
+    /* ignore child exists (kill zombies) */
+    signal(SIGCHLD, SIG_IGN);
+
     while(1) {
         /* accept incomming connects */
         child_fd = accept(socket_fd, (struct sockaddr*) &addr, &len);
         error_handling(child_fd, "socket accept error");
-    
-        /* send counter value to client */
-        tmp = htonl(counter);
-        n = writen(child_fd, &tmp, sizeof(counter));
-        error_handling(n - 4, "less than 4 bites written");
 
         counter++;
+        child_id = fork();
+        error_handling(child_id, "fork error");
+
+        if(!child_id) {
+            /* send counter value to client */
+            tmp = htonl(counter);
+            n = writen(child_fd, &tmp, sizeof(counter));
+            error_handling(n - 4, "less than 4 bites written");
+            
+            close(child_fd);
+            break;
+        }
         close(child_fd);
     }
     return 0;
