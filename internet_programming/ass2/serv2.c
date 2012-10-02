@@ -18,7 +18,10 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-/* error exit function */
+/* error exit function 
+ * prints error string parameter given 
+ * and perror before exiting on a 
+ * negative integer */
 void error_handling(int error, char *str)
 {
     if(error < 0) {
@@ -68,7 +71,7 @@ int main(int argc, const char *argv[])
     addr.sin_port = htons(1234);
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
 
-    /* set socket options and check for errors */
+    /* set socket level options */
     error = setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR,\
                       (const void *)&optval , sizeof(int));
     error_handling(error, "setsocketopt error");
@@ -81,11 +84,11 @@ int main(int argc, const char *argv[])
     error = listen(socket_fd, 5);
     error_handling(error, "socket listen error");
 
-    /* ignore child exists (kill zombies) */
+    /* ignore child exist signals (kill zombies) */
     signal(SIGCHLD, SIG_IGN);
 
     while(1) {
-        /* accept incomming connects */
+        /* accept incomming connects from clients */
         child_fd = accept(socket_fd, (struct sockaddr*) &addr, &len);
         error_handling(child_fd, "socket accept error");
 
@@ -94,14 +97,18 @@ int main(int argc, const char *argv[])
         error_handling(child_id, "fork error");
 
         if(!child_id) {
-            /* send counter value to client */
+            /* send counter value to client
+             * but first convert it from host 
+             * byte order to network byte order */
             tmp = htonl(counter);
             n = writen(child_fd, &tmp, sizeof(counter));
-            error_handling(n - 4, "less than 4 bites written");
-            
+            error_handling(n - 4, "less than 4 bites written"); 
+
+             
             close(child_fd);
             break;
         }
+        /* parent should also close the file descriptor */
         close(child_fd);
     }
     return 0;

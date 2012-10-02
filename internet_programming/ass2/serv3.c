@@ -24,29 +24,31 @@
 #define NUM_CHILD 5
 
 pid_t children[NUM_CHILD];
-int *shmid,
+int shmid,
     *shd_int,
     sem;
 
 struct sembuf up   = {0, 1, 0};
 struct sembuf down = {0, -1, 0};
 
+void error_handling(int error, char *str);
+
 void sig_int(int signo)
 {
-    int i;
+    int i, error;
 
-    printf("1\n");
     /* terminate all children */
     for (i = 0; i < NUM_CHILD; i++)
         kill(children[i], SIGTERM);
-    printf("2\n");
 
     while (wait(NULL) > 0);     /* wait for all children */
-    printf("3\n");
-    i = shmctl(*shmid, IPC_RMID, 0);
-    printf("4\n");
-    semctl(sem, 0, IPC_RMID);
-    printf("%d\n", i);
+
+    i = shmctl(shmid, IPC_RMID, 0);
+    error = semctl(sem, 0, IPC_RMID);
+    if(error < -1)
+        printf("ERROR %d\n", error);
+
+    printf("i: %d  error: %d\n", i, error);
 
     exit(0);
 }
@@ -105,7 +107,6 @@ pid_t make_child(int i, int socket_fd, socklen_t len, int sem)
         child_fd = accept(socket_fd, (struct sockaddr*) &addr, &len);
         error_handling(child_fd, "socket accept error");
 
-    
         /* send counter value to client */
         tmp = htonl(*shd_int);
         n = writen(child_fd, &tmp, sizeof(*shd_int));
@@ -125,7 +126,7 @@ int main(int argc, const char *argv[])
 {
     int socket_fd,
         counter = 0, optval = 1,
-        tmp, error, i, shmid;
+        tmp, error, i;
 
     struct sockaddr_in addr;
     size_t n;
@@ -134,6 +135,7 @@ int main(int argc, const char *argv[])
 
     /* kill all children on parent termination */
     signal(SIGINT, sig_int);
+    printf("DIT IS GEDAAN\n");
 
     /* create socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -157,7 +159,7 @@ int main(int argc, const char *argv[])
     error_handling(error, "socket listen error");
 
     /* ignore child exists (kill zombies) */
-    //signal(SIGCHLD, SIG_IGN);
+    signal(SIGCHLD, SIG_IGN);
 
     /* create semaphore and shared memory */
     sem = semget(IPC_PRIVATE, 1, 0600); 
@@ -173,12 +175,10 @@ int main(int argc, const char *argv[])
         children[i] = make_child(i, socket_fd, len, sem);
     }
     close(socket_fd);
-    printf("fucking hell\n");
 
     /* just wait forever */
     while(1);
 
-
-
+    sig_int(0);
     return 0;
 }
