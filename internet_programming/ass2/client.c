@@ -13,14 +13,7 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 
-/* error exit function */
-static inline void error_handling(int error, char *str)
-{
-    if(error < 0) {
-        perror(str);
-        exit(-1);
-    }
-}
+#include "writen_error.h"
 
 int main(int argc, const char *argv[])
 {

@@ -18,39 +18,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 
-/* error exit function 
- * prints error string parameter given 
- * and perror before exiting on a 
- * negative integer */
-void error_handling(int error, char *str)
-{
-    if(error < 0) {
-        perror(str);
-        exit(-1);
-    }
-}
-
-/* writen function from slides */
-ssize_t writen(int fd, const void *vptr, size_t n)
-{
-    size_t nleft;
-    ssize_t nwritten;
-    const char *ptr;
-    ptr = vptr;
-    nleft = n;
-
-    while (nleft > 0) {
-        if ((nwritten = write(fd, ptr, nleft)) <= 0) {
-            if (errno == EINTR)
-                nwritten = 0; /* and call write() again */
-            else 
-                return -1;  /* error */
-        } 
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    return n;
-}
+#include "writen_error.h"
 
 int main(int argc, const char *argv[])
 {
@@ -92,7 +60,11 @@ int main(int argc, const char *argv[])
         child_fd = accept(socket_fd, (struct sockaddr*) &addr, &len);
         error_handling(child_fd, "socket accept error");
 
+        /* increasing the counter before forking solves
+         * all concurrency problems */
         counter++;
+
+        /* fork a child to handle the request */
         child_id = fork();
         error_handling(child_id, "fork error");
 
@@ -104,7 +76,7 @@ int main(int argc, const char *argv[])
             n = writen(child_fd, &tmp, sizeof(counter));
             error_handling(n - 4, "less than 4 bites written"); 
 
-             
+            /* close the file descriptor and terminate */ 
             close(child_fd);
             break;
         }

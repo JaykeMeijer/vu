@@ -6,7 +6,6 @@
  * date:     26-09-2012
  */
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -20,22 +19,25 @@
 #include <errno.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
+#include <signal.h>
+
+#include "writen_error.h"
 
 #define NUM_CHILD 5
 
 pid_t children[NUM_CHILD];
 int shmid,
-    *shd_int,
+    *counter,
     sem;
 
 struct sembuf up   = {0, 1, 0};
 struct sembuf down = {0, -1, 0};
 
-void error_handling(int error, char *str);
-
+/* terminate all children, remove the shared memory
+ * and remove the semaphore when a SIGINT signal */
 void sig_int(int signo)
 {
-    int i, error;
+    int i, err_shm = 0, err_sem;
 
     /* terminate all children */
     for (i = 0; i < NUM_CHILD; i++)
@@ -43,47 +45,25 @@ void sig_int(int signo)
 
     while (wait(NULL) > 0);     /* wait for all children */
 
-    i = shmctl(shmid, IPC_RMID, 0);
-    error = semctl(sem, 0, IPC_RMID);
-    if(error < -1)
-        printf("ERROR %d\n", error);
+    /* report error when removing share memory,
+     * but continue to remove the semaphore */
+    err_shm = shmctl(shmid, IPC_RMID, 0);
+    if(err_shm == -1)
+        perror("error removing shared memory");
 
-    printf("i: %d  error: %d\n", i, error);
+    /* we can exit on semaphore remove error */
+    err_sem = semctl(sem, 0, IPC_RMID);
+    error_handling(err_sem, "error removing semaphore");
 
-    exit(0);
+    /* still exit with -1 when removing shared
+     * memory failed, but removing semaphore
+     * was successful */
+    exit(err_shm);
 }
 
-/* error exit function */
-void error_handling(int error, char *str)
-{
-    if(error < 0) {
-        perror(str);
-        exit(-1);
-    }
-}
-
-/* writen function from slides */
-ssize_t writen(int fd, const void *vptr, size_t n)
-{
-    size_t nleft;
-    ssize_t nwritten;
-    const char *ptr;
-    ptr = vptr;
-    nleft = n;
-
-    while (nleft > 0) {
-        if ((nwritten = write(fd, ptr, nleft)) <= 0) {
-            if (errno == EINTR)
-                nwritten = 0; /* and call write() again */
-            else 
-                return -1;  /* error */
-        } 
-        nleft -= nwritten;
-        ptr += nwritten;
-    }
-    return n;
-}
-
+/* function which creates a child to handle
+ * incoming connections. The parent returns
+ * with the process id of the child */
 pid_t make_child(int i, int socket_fd, socklen_t len, int sem)
 {
     pid_t child_id;
@@ -94,50 +74,54 @@ pid_t make_child(int i, int socket_fd, socklen_t len, int sem)
 
     /* create child process */
     child_id = fork();
+    error_handling(child_id, "fork error");
 
     /* parent returns with child pid */
     if(child_id > 0)
         return child_id;
 
-    /* child accepts incomming connects and sends count */
-    //printf("Child %d reporting for duty.\n", i);
+    /* reset child signal handling for SIGINT */
+    signal(SIGINT, SIG_IGN);
 
     while(1) {
-        /* accept incomming connects */
+        /* accept incoming connects */
         child_fd = accept(socket_fd, (struct sockaddr*) &addr, &len);
         error_handling(child_fd, "socket accept error");
 
-        /* send counter value to client */
-        tmp = htonl(*shd_int);
-        n = writen(child_fd, &tmp, sizeof(*shd_int));
-        error_handling(n - 4, "less than 4 bites written");
-
-        /* safely increase the counter by one */
+        /* safely increase the counter by one
+         * using a semaphore and temporary 
+         * store it in network byte order */
         semop(sem, &down, 1);    
-        *shd_int += 1;
+        tmp = htonl((*counter)++);
         semop(sem, &up, 1);    
 
+        /* send the in network byte order counter
+         * value to the client */
+        n = writen(child_fd, &tmp, sizeof(tmp));
+        error_handling(n - 4, "less than 4 bites written");
+
+        /* don't leave the file descriptor open */
         close(child_fd);
     }
 }
 
-
 int main(int argc, const char *argv[])
 {
     int socket_fd,
-        counter = 0, optval = 1,
+        optval = 1,
         tmp, error, i;
+
+    char input[512];
 
     struct sockaddr_in addr;
     size_t n;
     socklen_t len;
     pid_t child_id;
 
-    /* kill all children on parent termination */
+    /* kill all children when the parent terminates */
     signal(SIGINT, sig_int);
-    printf("DIT IS GEDAAN\n");
 
-    /* create socket */
+    /* create a socket */
     socket_fd = socket(AF_INET, SOCK_STREAM, 0);
     error_handling(socket_fd, "socket creation error");
 
@@ -167,18 +151,28 @@ int main(int argc, const char *argv[])
 
     shmid = shmget(IPC_PRIVATE, sizeof(int), 0600);
     error_handling(shmid, "shmget error");
-    shd_int = (int *) shmat(shmid, 0, 0); 
+    counter = (int *) shmat(shmid, 0, 0); 
 
-    *shd_int = 1;
+    /* counter starts by 1 */
+    *counter = 1;
 
+    /* create NUM_CHILD children to handle incoming
+     * connections from clients */
     for(i = 0; i < NUM_CHILD; i++) {
         children[i] = make_child(i, socket_fd, len, sem);
     }
     close(socket_fd);
 
-    /* just wait forever */
-    while(1);
+    printf("Server is terminated with 'exit' command, ctr+D or ctr+C\n");
 
-    sig_int(0);
+    /* parent waits for 'exit' command, 
+     * ctr+D or ctr+C to terminate */
+    while(1)
+        if(!fgets(input, 512, stdin) || !strcmp(input, "exit\n"))
+            /* terminate all children, remove semaphores
+             * and shared memory before terminating */
+            sig_int(0);
+    
+    /* this is never reached */
     return 0;
 }

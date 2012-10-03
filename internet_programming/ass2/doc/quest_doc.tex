@@ -1,0 +1,86 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{todonotes}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{listings}
+%\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+\title{Internet Programming\\Distributed Programming with Sockets}
+\author{Rik van der Kooij - rkj800}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+All programs have been tested on the VU machine fluit.few.vu.nl with Linux version 2.6.32-5-amd64 and gcc version 4.4.5. All the programs can be compiled using the Makefile. Run the c programs with ./prog\_name.
+
+\section{A Content-preserving Server}
+\subsection{client}
+Run: \texttt{./client hostname} where hostname is the location of a running server.
+
+The client tries to connect to the server using an active socket. When a connection is found the counter value is read from the server. It expects the counter value in network byte order, so we reorder it to host byte order.
+
+\subsection{serv1}
+Run: \texttt{./serv1}
+
+The sequential implementation creates a passive socket and waits for incoming connections. Upon accepting a connection the counter value is converted to network byte order before being sent. No real implementation choices had to be made.
+
+\subsection{serv2}
+Run: \texttt{./serv2}
+
+The one process per request implementation adds a fork call after accepting a connection. We update the counter before calling fork. This way the child process gets a unique duplication of the increased counter value. We should not forget to kill zombie processes and close all file descriptors. 
+
+\subsection{A}
+The server now uses multiple processes. The counter variable should therefore be accessible for all these multiple processes. Each counter value should be sent only onces to clients without missing one. 
+
+Fork copies all variables so a counter variable in the parent should also exist on children. When we let the parent increment the counter variable before forking, we assure that every child gets an unique counter value. 
+
+Yes, multiple concurrent request will all give each client a unique counter value. The counter value is protected with a semaphore and accessed only onces.
+
+\subsection{serv3}
+Run: \texttt{./serv3}
+The preforked implementation forks \texttt{NUM\_CHILD} children before it would call accept in serv2. The children will be given the socket file descriptor to wait for incoming connections. Main difference is that the counter can now be accessed by multiple processes at the time. It is therefor stored in shared memory and protected by a semaphore for mutual exclusion.
+
+\subsubsection{B}
+With one process per request the parent could increase the counter. With the preforked implementation this is not possible since the parent has no clue when a child handles a request. Increasing the counter is a critical section. Multiple children should not be able to increase the counter at the same time. 
+
+This can be solved by storing the counter in shared memory and protecting it with a semaphore. Before increasing the counter the semaphore should be taken first and released after.
+
+
+
+\section{A Talk Program}
+
+\subsection{C}
+The talk program holds only one connection to the other talk user. The logical idea would be to use a iterative server implementation because after the connection has been established no other connection should be accepted on the server or connected to on the client.
+
+\subsection{D}
+Yes, the client and the server can be executed on the same machine. Active client sockets and a passive server socket with the same specific address can run simultaneously on the same machine.
+
+No, starting the talk program as server twice is not possible. Binding to a specific address twice would make it impossible to know which 'bind' to give a incoming connection to. This can be avoided using different addresses which is as simple as using different ports. 
+
+\subsection{E}
+The problem can be solved using either multiple processes or multiple threads. One process/thread is used for input handling and one for reading incoming messages.
+
+\subsection{Talk}
+Run as server \texttt{./talk}. Run as client: \texttt{./talk host\_name}. 
+
+The talk program is implemented to use two processes. After a connection has been established (either as server or client) the program forks to create another process. One is used to wait forever for input of the user. The other is used to get the messages from the other talk user.
+
+The talk program is ended by given a \texttt{SIGINT} (\texttt{ctr+C}) signal before a connection has been established or \texttt{SIGINT}, \texttt{ctr+D} or \texttt{quit()} as input after the process handling input has been started. When one running talk program terminates it sends a '\\0' character to the other user. This way the other talk program can terminate after reading this.
+
+This means the program can finish either in the input handling process or in the message reading process. On termination of the parent process it kills the child. The parent also dies when it receives a \texttt{SIGCHLD} signal. This way the processes always terminate together. 
+
+The other option would be using threads instead of processes. The main advantage of threads is that they are lighter-weight and have easier communication. There is no real communication between the processes/threads and overhead of one extra process didn't seem to be that much. Since I think processes are more elegant I used the processes implementation.
+
+
+
+\end{document}
+
+
+
+
+
+

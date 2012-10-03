@@ -1,10 +1,15 @@
 CC=gcc
 EXE=client serv1 serv2 serv3 talk
+HEADER=writen_error
 
-all: $(EXE)
+all: writen $(EXE)
 
-%: %.c
-	$(CC) $^ -o $@ -g
+%: %.c 
+	$(CC) -c $^
+	$(CC) $@.o $(HEADER).o -o $@
 	
+writen:
+	$(CC) -c $(HEADER).c
+
 clean:
-	rm $(EXE)
+	rm $(EXE) *.o
