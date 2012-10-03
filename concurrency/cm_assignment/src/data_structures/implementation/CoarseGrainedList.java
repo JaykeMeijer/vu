@@ -64,30 +64,31 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         T item = null;
         Node next = null;
 
-        public abstract int compareTo(T t);
+        protected abstract int compareTo(T t);
     }
 
     /* sentinal head node */
     class HeadNode extends Node {
-        public int compareTo(T t) {
+        protected int compareTo(T t) {
             return -1;
         }
     }
 
     /* sentinal tail node */
     class TailNode extends Node {
-        public int compareTo(T t) {
+        protected int compareTo(T t) {
             return 1;
         }
     }
 
+    /* normal list node */
     class ListNode extends Node {
         ListNode(T t, Node n) {
             item = t; 
             next = n;
         }
 
-        public int compareTo(T t) {
+        protected int compareTo(T t) {
             return item.compareTo(t);
         }
     }
