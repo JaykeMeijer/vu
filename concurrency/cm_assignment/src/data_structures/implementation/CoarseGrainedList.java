@@ -84,7 +84,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     /* normal list node */
     class ListNode extends Node {
         ListNode(T t, Node n) {
-            item = t; 
+            item = t;
             next = n;
         }
 
