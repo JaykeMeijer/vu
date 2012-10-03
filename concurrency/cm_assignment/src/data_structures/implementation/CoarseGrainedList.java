@@ -4,29 +4,26 @@ import data_structures.Sorted;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
-
-    private Node<T> head;
+    private Node head;
     private ReentrantLock lock = new ReentrantLock();
 
     public CoarseGrainedList() {
-        head = new Node<T>(Integer.MIN_VALUE);
-        head.next = new Node<T>(Integer.MAX_VALUE);
+        head = new HeadNode();
+        head.next = new TailNode();
     }
 
 	public void add(T t) {
         Node pred, curr;
-        int key = t.hashCode();
         lock.lock();
         try {
             pred = head;
             curr = head.next;
-            while(curr.key < key) {
+            while(curr.compareTo(t) == -1) {
                 pred = curr;
                 curr = curr.next;
             }
-            Node<T> node = new Node<T>(t, key);
+            Node node = new ListNode(t, curr);
             pred.next = node;
-            node.next = curr;
         } finally {
             lock.unlock();
         }
@@ -35,16 +32,16 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
 
 	public void remove(T t) {
         Node pred, curr;
-        int key = t.hashCode();
         lock.lock();
         try {
             pred = head;
             curr = head.next;
-            while(curr.key < key) {
+
+            while(curr.compareTo(t) == -1) {
                 pred = curr;
                 curr = curr.next;
             }
-            if(curr.key == key)
+            if(curr.compareTo(t) == 0)
                 pred.next = curr.next;
         } finally {
             lock.unlock();
@@ -53,21 +50,45 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
 	}
 
 	public String toString() {
-        return "";
+        String s = "";
+        Node node = head;
+
+        while(node.next.item != null) {
+            node = node.next;
+            s += node.item + " ";
+        }
+        return s;
 	}
 
-    private static class Node<T> {
-        public T item = null;
-        public final int key;
-        public CoarseGrainedList.Node next;
+    abstract class Node {
+        T item = null;
+        Node next = null;
 
-        Node(int k) {
-            key = k;
+        public abstract int compareTo(T t);
+    }
+
+    /* sentinal head node */
+    class HeadNode extends Node {
+        public int compareTo(T t) {
+            return -1;
+        }
+    }
+
+    /* sentinal tail node */
+    class TailNode extends Node {
+        public int compareTo(T t) {
+            return 1;
+        }
+    }
+
+    class ListNode extends Node {
+        ListNode(T t, Node n) {
+            item = t; 
+            next = n;
         }
 
-        Node(T i, int k) {
-            item = i; 
-            key = k; 
+        public int compareTo(T t) {
+            return item.compareTo(t);
         }
     }
 }
