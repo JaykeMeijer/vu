@@ -3,10 +3,16 @@ package data_structures.implementation;
 import data_structures.Sorted;
 
 public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
+	private Node root;
+
+    public FineGrainedTree() {
+        root = new TailNode();
+        root.left = new HeadNode();
+    }
 
 	public void add(T t) {
 		Node pred, curr;
-
+		
 		
 	}
 
