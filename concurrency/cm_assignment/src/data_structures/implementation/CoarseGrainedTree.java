@@ -10,7 +10,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     public CoarseGrainedTree() {
         root = new TailNode();
         root.left = new HeadNode();
-        System.out.println(toString());
     }
 
 	public void add(T t) {
@@ -25,7 +24,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                     pred = curr;
                     curr = curr.right;
                 }
-                else if(curr.compareTo(t) == 1) {  // maybe just else
+                else if(curr.compareTo(t) > 0) {  // maybe just else
                     pred = curr;
                     curr = curr.left;
                 }
@@ -36,7 +35,6 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             } else {
                 pred.left = node;
             }
-            System.out.println(toString());
         } finally {
             lock.unlock();
         }
@@ -44,17 +42,90 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 	}
 
 	public void remove(T t) {
+        Node pred, curr;
         lock.lock();
         try {
+            pred = root;
+            curr = root.left;
 
+            /* find the node we want to remove */
+            while(curr != null) {
+                if(curr.compareTo(t) < 0) {
+                    pred = curr;
+                    curr = curr.right;
+                }
+                else if(curr.compareTo(t) > 0) {  // maybe just else
+                    pred = curr;
+                    curr = curr.left;
+                }
+                else
+                    break;
+            }
+            /* Remove if it has the same item */
+            if(curr.compareTo(t) == 0)
+                remove(curr, pred);
+            //System.out.println(toString());
         } finally {
             lock.unlock();
         }
         return;
 	}
 
+    private void remove(Node node, Node parent) {
+        if(node.left != null && node.right != null) { /* node has 2 children */
+            Node par_succ = findParSucc(node);
+            Node succ;
+
+            if(par_succ == node) {
+                /* successor is right child of the node */
+                succ = par_succ.right;
+                node.item = succ.item;
+                node.right = succ.right;
+            } else {
+                /* successor is left somewhere deeper in the tree */
+                succ = par_succ.left;
+                node.item = succ.item;
+                par_succ.left = succ.right;
+            }
+
+        } else if(node.left != null || node.right != null) { /* Node has 1 child */
+            /* Swap the node with its child */
+            if(node.left != null)
+                if(parent.left == node) {
+                    parent.left = node.left;
+                } else
+                    parent.right = node.left;
+            else 
+                if(parent.left == node)
+                    parent.left = node.right;
+                else
+                    parent.right = node.right;
+        } else if(node.left == null && node.right == null) { /* node is a leave */
+            /* just set the parent child reference to null*/
+            if(parent.left == node)
+                parent.left = null;
+            else
+                parent.right = null;
+        }
+        return;
+    }
+
+    /* returns parent of the inorder successor 
+     * The successor is either the right or lef
+     * child of the parent */
+    private Node findParSucc(Node node) {
+        Node pred = node;
+        node = node.right;
+
+        while(node.left != null) {
+            pred = node;
+            node = node.left;
+        }
+        return pred;
+    }
+
 	public String toString() {
-        return root.print("", true, false) + "\n\n";
+        return root.print("", true, false);
 	}
 
     abstract class Node {
