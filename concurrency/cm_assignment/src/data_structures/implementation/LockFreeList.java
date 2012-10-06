@@ -1,44 +1,67 @@
 package data_structures.implementation;
 
 import data_structures.Sorted;
+import java.util.concurrent.atomic.AtomicMarkableReference;
 
 public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
 
     public LockFreeList() {
         head = new HeadNode();
-        head.next = new TailNode();
+        head.next = new AtomicMarkableReference<Node>(new TailNode(), false);
     }
 
 	public void add(T t) {
-        return;
+        while(true) {
+            Window window = find(t);
+            Node pred = window.pred;
+            Node curr = window.curr;
+
+            Node node = new ListNode(t);
+            node.next = new AtomicMarkableReference<Node>(curr, false);
+            if(pred.next.compareAndSet(curr, node, false, false))
+                return;
+        }
 	}
 
 	public void remove(T t) {
-        String s = "";
-        Node node = head;
+        boolean snip;
+        while(true) {
+            Window window = find(t);
+            Node pred = window.pred;
+            Node curr = window.curr;
+            curr = window.curr;
 
-        while(node.next.item != null) {
-            node = node.next;
-            s += node.item + " → ";
+            Node succ = curr.next.getReference();
+            snip = curr.next.attemptMark(succ, true);
+            if(!snip)
+                continue;
+            pred.next.compareAndSet(curr, succ, false, false);
+            return;
         }
-        return;
 	}
 
 	public String toString() {
-        return "→";
+        String s = "";
+        Node node = head;
+
+        while(node.next.getReference().item != null) {
+            node = node.next.getReference();
+            s += node.item + " → ";
+        }
+        return s;
 	}
 
-    /*public Window find(T t) {
+    public Window find(T t) {
         Node pred = null, curr = null, succ = null;
         boolean [] marked = {false};
         boolean snip;
         
         while(true) {
-            succ = curr.next.get(marked);
+            pred = head;
+            curr = pred.next.getReference();
             while(true) {
-                pred = head;
-                curr = pred.next.getReference();
+                succ = curr.next.get(marked); // DIT GAAT NOG FOUT
                 while(marked[0]) {
                     snip = pred.next.compareAndSet(curr, succ, false, false);
                     if(!snip)
@@ -61,11 +84,11 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
             pred = myPred;
             curr = myCurr;
         }
-    }*/
+    }
 
     abstract class Node {
         T item = null;
-        Node next = null;
+        AtomicMarkableReference<Node> next = null;
 
         protected abstract int compareTo(T t);
     }
@@ -86,9 +109,13 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
 
     /* normal list node */
     class ListNode extends Node {
+        ListNode(T t) {
+            item = t;
+        }
+
         ListNode(T t, Node n) {
             item = t;
-            next = n;
+            next = null;
         }
 
         protected int compareTo(T t) {
