@@ -1,3 +1,15 @@
+/*
+*  Assignment Concurrency & Multithreading.
+*  
+*  Rik van der Kooij, rij---,  
+*  Richard Torenvliet, rtt210, 2526863
+*
+*  Program: CoarseGrainedTree.java
+*       This program implements the a concurrent data structure with coars
+*       grained synchronization. Locks are obtained on the whole datastructure,
+*       so no other thread can manipulate the datastructure concurrenty.
+*/
+
 package data_structures.implementation;
 
 import data_structures.Sorted;
@@ -41,6 +53,13 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return;
 	}
 
+   /**
+    * Removes the node with value t and removes it.
+    * It traversers the tree from the root to the element
+    * to be removed. 
+    *
+    * @param    T   t   value of node to be removed
+    */
 	public void remove(T t) {
         Node pred, curr;
         lock.lock();
@@ -64,13 +83,21 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             /* Remove if it has the same item */
             if(curr.compareTo(t) == 0)
                 remove(curr, pred);
-            //System.out.println(toString());
         } finally {
             lock.unlock();
         }
         return;
 	}
-
+    /**
+    * Removes the node from the datastructure. 3 basic cases are evaluated.
+    * The node to be removed has:
+    * 1. 2 child nodes, set node do in order successor
+    * 2. on child node, set parent left or right to left or right child.
+    * 3. no children, just set to null
+    *
+    * @param    Node    node    node remove
+    * @param    Node    parent  parent of node to remove
+    */
     private void remove(Node node, Node parent) {
         if(node.left != null && node.right != null) { /* node has 2 children */
             Node par_succ = findParSucc(node);
@@ -110,9 +137,16 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return;
     }
 
-    /* returns parent of the inorder successor 
-     * The successor is either the right or lef
-     * child of the parent */
+    /** 
+     *  Returns parent of the inorder successor 
+     *  The successor is either the right or lef
+     *  child of the parent 
+     *
+     *  @param  Node    node    as starting point to search
+     *                          its inorder successor.
+     *
+     *  @return Node
+     */
     private Node findParSucc(Node node) {
         Node pred = node;
         node = node.right;
@@ -124,6 +158,10 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return pred;
     }
 
+   /**
+    * Returns the tree in a string.
+    * @return String
+    */
 	public String toString() {
         return root.print("", true, false);
 	}
