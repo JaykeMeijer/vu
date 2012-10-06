@@ -1,3 +1,16 @@
+/**
+*  Assignment Concurrency & Multithreading.
+*  
+*  Rik van der Kooij, rij---,  
+*  Richard Torenvliet, rtt210, 2526863
+*
+*  Program: FineGrainedTree.java
+*       This program implements the a concurrent data structure with fine
+*       grained synchronization. Locks are obtained by in a hand-over-hand
+*       fashion
+*
+*/
+
 package data_structures.implementation;
 
 import data_structures.Sorted;
@@ -6,18 +19,30 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
 
+    /**
+    * Constructor. init head and tail node
+    */
     public FineGrainedList() {
         head = new HeadNode();
         head.next = new TailNode();
     }
-
+    /**
+    *  
+    * Adds a node to the datastructure with Fine grained synchronization
+    * @param    T   t   item to add to the datastructure
+    */
 	public void add(T t) {
+        /* start with acquiring lock on head */
         head.lock();
+        /* copy of head */
         Node pred = head;
+        /*  */
+        Node curr = pred.next;
         try {
-            Node curr = pred.next;
-            curr.lock();
+            /* acquire lock on current node */
+            curr.lock(); 
             try {
+                /* traverse list until, elem or index is found or  */
                 while(curr.compareTo(t) == -1) {
                     pred.unlock();
                     pred = curr;

@@ -1,3 +1,15 @@
+/**
+*  Assignment Concurrency & Multithreading.
+*  
+*  Rik van der Kooij, rij---,  
+*  Richard Torenvliet, rtt210, 2526863
+*
+*  Program: FineGrainedTree.java
+*       This program implements the a concurrent data structure with fine
+*       grained synchronization. Locks are obtained by in a hand-over-hand
+*       fashion
+*
+*/
 package data_structures.implementation;
 
 import data_structures.Sorted;
@@ -6,11 +18,20 @@ import java.util.concurrent.locks.ReentrantLock;
 public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 	private Node root;
 
+    /**
+    * Constructor. init head and tail node
+    */
     public FineGrainedTree() {
         root = new TailNode();
         root.left = new HeadNode();
     }
 
+    /**
+    *
+    * adds an item to the datastructure.
+    *
+    * @param    T   t   value of item of the new node.
+    */
 	public void add(T t) {
 		Node pred = null, curr = null;
 		root.lock();
@@ -41,36 +62,43 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 		}
 	}
 
+   /**
+    * Removes the node with value t and removes it.
+    * It traversers the tree from the root to the element
+    * to be removed. 
+    *
+    * @param    T   t   value of node to be removed
+    */
     public void remove(T t) {
         Node pred = null, curr = null;
         root.lock();
-
         pred = root;
-        curr = root.left;
+
         try {
+            curr = root.left;
             try {
+                curr.lock();
                 /* find the node we want to remove() */
                 while(curr != null) {
-                    curr.lock();
                     if(curr.compareTo(t) < 0) {
                         // go right
                         pred.unlock();
                         pred = curr;
                         curr = curr.right;
+                        curr.lock();
                     } else if(curr.compareTo(t) > 0) {  // maybe just else
                         // go left
                         pred.unlock();
                         pred = curr;
                         curr = curr.left;
+                        curr.lock();
                     }
-                    // either curr == null
-                    // or element to be removed
                     else 
                         break;
                 }
 
                 if (curr.compareTo(t) == 0){
-                        remove(curr, pred);
+                    remove(curr, pred);
                 }
                 
             } finally {
@@ -82,13 +110,21 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         }
         return;
     }
-
+    /**
+    * Removes the node from the datastructure. 3 basic cases are evaluated.
+    * The node to be removed has:
+    * 1. 2 child nodes, set node do in order successor
+    * 2. on child node, set parent left or right to left or right child.
+    * 3. no children, just set to null
+    *
+    * @param    Node    node    node remove
+    * @param    Node    parent  parent of node to remove
+    */
      private void remove(Node node, Node parent) {
         Node par_succ = null;
         if(node.left != null && node.right != null) { /* node has 2 children */
             par_succ = findParSucc(node);
             Node succ;
-
             if(par_succ == node) {
                 /* successor is right child of the node */
                 succ = par_succ.right;
@@ -131,18 +167,26 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
      * child of the parent */
     private Node findParSucc(Node node) {
         /* node is still locked by this thread */
+        /* create a copy of curr */
         Node pred = node;
+        /* one step right */
         node = node.right;
+        /* acquire the lock */
         node.lock();
-
-        while(node.left != null) {
-            pred = node;
-            node = node.left;
-            node.lock();
-            pred.unlock();
+        try {
+            /* step left, until there node == null */
+            while(node.left != null) {
+                /* copy current node */
+                pred = node;
+                /* step left */
+                node = node.left;
+                /* lock this node */
+                node.lock();
+                pred.unlock();
+            }
+        } finally {
+            node.unlock();
         }
-
-        /*leaving with lock on node and lock on pred*/
         return pred;
     }
 

@@ -1,3 +1,16 @@
+/*
+*  Assignment Concurrency & Multithreading.
+*  
+*  Rik van der Kooij, rij---,  
+*  Richard Torenvliet, rtt210, 2526863
+*
+*  Program: CoarseGrainedList.java
+*       This program implements the a concurrent data structure (list) with coarse
+*       grained synchronization. Locks are obtained on the whole datastructure,
+*       so no other thread can manipulate the datastructure concurrenty.
+*/
+
+
 package data_structures.implementation;
 
 import data_structures.Sorted;
@@ -12,6 +25,12 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         head.next = new TailNode();
     }
 
+   /**
+    *
+    * adds an item to the datastructure.
+    *
+    * @param    T   t   value of item of the new node.
+    */
 	public void add(T t) {
         Node pred, curr;
         lock.lock();
@@ -29,7 +48,14 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         }
         return;
 	}
-
+   
+   /**
+    * Removes the node with value t and removes it.
+    * It traversers the list from the head to the element
+    * to be removed. 
+    *
+    * @param    T   t   value of node to be removed
+    */
 	public void remove(T t) {
         Node pred, curr;
         lock.lock();
@@ -49,6 +75,10 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return;
 	}
 
+    /**
+    * prints the datastructure
+    * @return String 
+    */
 	public String toString() {
         String s = "";
         Node node = head;
