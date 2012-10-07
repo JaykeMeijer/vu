@@ -12,7 +12,6 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     }
 
 	public void add(T t) {
-        System.out.println("add" + t);
         while(true) {
             Window window = find(t);
             Node pred = window.pred;
@@ -26,20 +25,21 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
 	}
 
 	public void remove(T t) {
-        System.out.println("rm" + t);
         boolean snip;
         while(true) {
             Window window = find(t);
             Node pred = window.pred;
             Node curr = window.curr;
 
-            curr = window.curr;
-
-            Node succ = curr.next.getReference();
-            snip = curr.next.compareAndSet(succ, succ, false, true);
-            if(!snip)
-                continue;
-            pred.next.compareAndSet(curr, succ, false, false);
+            if(curr.compareTo(t) != 0) {
+                System.out.println("Element not found, skipping");
+            } else {
+                Node succ = curr.next.getReference();
+                snip = curr.next.compareAndSet(succ, succ, false, true);
+                if(!snip)
+                    continue;
+                pred.next.compareAndSet(curr, succ, false, false);
+            }
             return;
         }
 	}
@@ -60,15 +60,15 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
         boolean [] marked = {false};
         boolean snip;
         
-        while(true) {
+        retry: while(true) {
             pred = head;
             curr = pred.next.getReference();
             while(true) {
-                succ = curr.next.get(marked); // DIT GAAT NOG FOUT
+                succ = curr.next.get(marked);
                 while(marked[0]) {
                     snip = pred.next.compareAndSet(curr, succ, false, false);
                     if(!snip)
-                        continue;
+                        continue retry;
                     curr = succ;
                     succ = curr.next.get(marked);
                 }
@@ -114,11 +114,6 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
     class ListNode extends Node {
         ListNode(T t) {
             item = t;
-        }
-
-        ListNode(T t, Node n) {
-            item = t;
-            next = new AtomicMarkableReference<Node>(n, false);
         }
 
         protected int compareTo(T t) {
