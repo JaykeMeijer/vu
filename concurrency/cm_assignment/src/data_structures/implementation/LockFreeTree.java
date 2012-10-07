@@ -4,7 +4,7 @@ import data_structures.Sorted;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
-    public enum flag {
+    public enum Flag {
         CLEAN, DFLAG, IFLAG, MARK
     }
 
@@ -14,21 +14,90 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         root = new TailNode();
         root.left = new AtomicMarkableReference<Leaf> (new HeadLeaf(), false)
         root.right = new AtomicMarkableReference<Leaf> (new TailLeaf(), false);
-
     }
 
 
 	public void add(T t) {
-        Node p = new TreeNode(t, );
+        Boolean compare;
+        InternalNode p, newInternal;
+        Leaf l, newSibling;
+        Leaf newChild = new Leaf(t);
+        Update pupdate, result, newup = new Update(CLEAN, null);
+        IInfo op;
+
+        while(true){
+            SearchObject res = search(k);
+            compare = res.l.key.compareTo(k);
+            if (compare == 0)
+                return;
+            else if (res.pupdate.state != CLEAN)
+                help(res.pupdate);
+            else {
+                newSibling = new Leaf(res.l.key);
+                if (compare > 0) {
+                    newInternal = new InternalNode(res.l.key)
+                    newInteral.left = newSibling;
+                    newInteral.right = newInternal;
+                }
+                else {
+                    newInternal = new InternalNode(k);
+                    newInteral.right = newSibling;
+                    newInteral.left = newInternal;
+                }
+
+                newInternal.update = newup;
+                op = new IInfo(p, l, newInternal);
+                res.p.compareAndSet();
+
+
+            }
+        }
 	}
 
 	public void remove(T t) {
 		
 	}
 
+    public help(){
+
+
+    }
+
 	public String toString() {
 		return "";
 	}
+
+    private SearchObject search(T t){
+        InternalNode gp, p;
+        Update gpupdate, pupdate;
+        InternalNode l = root;
+
+        while (curr instanceof InternalNode){
+            gp = p;
+            p = l;
+            pupdate = p.update;
+            if (l.compareTo(t) == -1)
+                l = p.left;
+            else
+                l = p.right;
+        }
+
+        return SearchObject(gp, p, l, pupdate, gpupdate); 
+    }
+
+    class SearchObject {
+        InternalNode gp, p;
+        Node l;
+        Update pupdate, gpupdate;
+
+        SearchObject(InternalNode gp, InternalNode p, Node l, Update pupdate, Update gpupdate){
+            this.gp = gp;
+            this.p = p;
+            this.l = l;
+            this.pupdate = pupdate;
+            this.gpupdate = gpupdate;
+        }
+    }
 
     abstract class Node {
         T key = null;
@@ -85,33 +154,30 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
 
-    class HeadNode extends TreeNode {
+    class HeadNode extends InternalNode {
         protected int compareTo(T t){
             return 1;
         }
     }
 
-    class TailNode extends TreeNode {
+    class TailNode extends InternalNode {
         protected int compareTo(T t){
             return -1;
         }
     }
 
     class Update {
-        flag state;
+        Flag state;
         Info info;
     }
 
     /* normal list node */
-    class TreeNode extends Node {
-
-
-        TreeNode(T t) {
+    class InternalNode extends Node {
+        InternalNode(T t) {
             key = t;
         }
 
-
-        TreeNode(T t, Node n) {
+        InternalNode(T t, Node n) {
             key = t;
             left = null;
             right = null;
