@@ -8,17 +8,16 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         CLEAN, DFLAG, IFLAG, MARK
     }
 
-    private Node root;
+    private Internal root;
 
 	public LockFreeTree() {
         root = new DummyNode();
-        root.left = new AtomicMarkableReference<Leaf> (new DummyLeaf(), false)
-        root.right = new AtomicMarkableReference<Leaf> (new DummyLeaf(), false);
+        root.left = new DummyLeaf();
+        root.right = new DummyLeaf();
     }
 
-
 	public void add(T t) {
-        Boolean compare;
+        /*Boolean compare;
         InternalNode p, newInternal;
         Leaf l, newSibling;
         Leaf newChild = new Leaf(t);
@@ -35,7 +34,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else {
                 newSibling = new Leaf(res.l.key);
                 if (compare > 0) {
-                    newInternal = new InternalNode(res.l.key)
+                    newInternal = new InternalNode(res.l.key);
                     newInteral.left = newSibling;
                     newInteral.right = newInternal;
                 }
@@ -51,46 +50,45 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
 
             }
-        }
+        }*/
 	}
 
 	public void remove(T t) {
 		
 	}
 
-    public help(){
-
-
+    public void help() {
+        
     }
 
 	public String toString() {
-		return "";
+		return root + " " + root.left + " " + root.right; 
 	}
 
     private SearchObject search(T t){
-        InternalNode gp, p;
-        Update gpupdate, pupdate;
-        InternalNode l = root;
+        Internal gp = null, p = null;
+        Node l = root;
+        Update gpupdate = null, pupdate = null;
 
-        while (curr instanceof InternalNode){
+        while (l.getClass() == Internal.class){
             gp = p;
-            p = l;
+            p = (Internal) l;
             pupdate = p.update;
             if (l.compareTo(t) == -1)
-                l = p.left;
+                l = gp.left;
             else
-                l = p.right;
+                l = gp.right;
         }
 
-        return SearchObject(gp, p, l, pupdate, gpupdate); 
+        return new SearchObject(gp, p, l, pupdate, gpupdate);
     }
 
     class SearchObject {
-        InternalNode gp, p;
+        Internal gp, p;
         Node l;
         Update pupdate, gpupdate;
 
-        SearchObject(InternalNode gp, InternalNode p, Node l, Update pupdate, Update gpupdate){
+        SearchObject(Internal gp, Internal p, Node l, Update pupdate, Update gpupdate){
             this.gp = gp;
             this.p = p;
             this.l = l;
@@ -99,49 +97,55 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    abstract class Node {
-        T key = null;
-        AtomicMarkableReference<Update> update = null;
-        AtomicMarkableReference<Node> left = null;
-        AtomicMarkableReference<Node> right = null;
-        
-        protected abstract int compareTo(T t);
-    }
-
     abstract class Info {
-        Node p = null;
-        Node l = null;
+        Internal p = null;
+        Leaf l = null;
     }
 
 
     class DInfo extends Info {
-        Node gp = null;
+        Internal gp = null;
 
-        DInfo(Node gp, Node p, Node l) {
+        DInfo(Internal gp, Internal p, Leaf l) {
             this.gp = gp;
             this.p = p;
-            this l = l;
+            this.l = l;
         }
     }
 
-    class IInfo {
-        IInfo(Node p, Node l) {
+    class IInfo extends Info {
+        Internal newInternal;
+
+        IInfo(Internal p, Leaf l) {
             this.p = p;
-            this l = l;
+            this.l = l;
         }
     }
 
-    class Leaf extends Node {
+    class Update {
+        Flag state = Flag.CLEAN;
+        Info info = null;
+    }
+
+    abstract class Node {
         T key = null;
 
-        Leaf(T t){
-            key = t;
-        }
+        protected abstract int compareTo(T t);
     }
 
-    class DummyLeaf extends Leaf {
-        protected int compareTo(T t){
-            return 1;
+    /* normal list node */
+    class Internal extends Node {
+        Update update = null;
+        Node left = null,
+             right = null;
+
+        Internal() {}
+        Internal(T t) {
+            key = t;
+        }
+
+        protected int compareTo(T t) {
+            return key.compareTo(t);
         }
     }
 
@@ -151,25 +155,23 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    class Update {
-        Flag state;
-        Info info;
-    }
+    class Leaf extends Node {
+        T key = null;
 
-    /* normal list node */
-    class InternalNode extends Node {
-        InternalNode(T t) {
+        Leaf() {}
+
+        Leaf(T t){
             key = t;
         }
 
-        InternalNode(T t, Node n) {
-            key = t;
-            left = null;
-            right = null;
-         }
-
         protected int compareTo(T t) {
             return key.compareTo(t);
+        }
+    }
+
+    class DummyLeaf extends Leaf {
+        protected int compareTo(T t){
+            return 1;
         }
     }
 }
