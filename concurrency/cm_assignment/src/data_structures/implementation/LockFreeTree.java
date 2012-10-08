@@ -11,9 +11,9 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     private Node root;
 
 	public LockFreeTree() {
-        root = new TailNode();
-        root.left = new AtomicMarkableReference<Leaf> (new HeadLeaf(), false)
-        root.right = new AtomicMarkableReference<Leaf> (new TailLeaf(), false);
+        root = new DummyNode();
+        root.left = new AtomicMarkableReference<Leaf> (new DummyLeaf(), false)
+        root.right = new AtomicMarkableReference<Leaf> (new DummyLeaf(), false);
     }
 
 
@@ -139,30 +139,15 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
-    class HeadLeaf extends Leaf {
-        protected int compareTo(T t){
-            return -1;
-        }
-    }
-
-    class TailLeaf extends Leaf {
-        update.state = CLEAN;
-
-        protected int compareTo(T t){
-            return -1;
-        }
-    }
-
-
-    class HeadNode extends InternalNode {
+    class DummyLeaf extends Leaf {
         protected int compareTo(T t){
             return 1;
         }
     }
 
-    class TailNode extends InternalNode {
+    class DummyNode extends Internal {
         protected int compareTo(T t){
-            return -1;
+            return 1;
         }
     }
 
