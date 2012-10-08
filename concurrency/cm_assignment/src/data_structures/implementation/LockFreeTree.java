@@ -18,7 +18,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 	public void add(T t) {
         int compare;
         Internal p, newInternal;
-        Leaf l, newSibling, newChild = new Leaf(t);
+        Leaf l, newSibling;
         Update pupdate, newup;
         IInfo op;
         Info pInfo;
@@ -123,6 +123,10 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
+    class Update {
+        AtomicStampedReference<Info> info ;
+    }
+
     abstract class Node {
         T key = null;
 
@@ -131,8 +135,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     /* normal list node */
     class Internal extends Node {
-        AtomicMarkableReference<Update> update = null;
-        
+        AtomicMarkableReference<Update>s update = null;
         Node left = null,
              right = null;
 
