@@ -190,7 +190,7 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return pred;
     }
 
-
+    
 	public String toString() {
         return root.print("", true, false) + "\n\n";
 	}
