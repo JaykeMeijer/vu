@@ -4,9 +4,7 @@ import data_structures.Sorted;
 import java.util.concurrent.atomic.AtomicMarkableReference;
 
 public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
-    public enum Flag {
-        CLEAN, DFLAG, IFLAG, MARK
-    }
+    final static int CLEAN = 0, DFLAG = 1, IFLAG = 2, MARK = 3;
 
     private Internal root;
 
@@ -123,7 +121,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     class Update {
-        Flag state = Flag.CLEAN;
+        int state = CLEAN;
         Info info = null;
     }
 
