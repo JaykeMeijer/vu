@@ -32,7 +32,7 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
             Node curr = window.curr;
 
             if(curr.compareTo(t) != 0) {
-                System.out.println("Element not found, skipping");
+                System.out.println("remove: element " + t + " not found");
             } else {
                 Node succ = curr.next.getReference();
                 snip = curr.next.compareAndSet(succ, succ, false, true);
