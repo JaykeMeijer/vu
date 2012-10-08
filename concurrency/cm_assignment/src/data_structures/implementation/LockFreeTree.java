@@ -1,7 +1,8 @@
 package data_structures.implementation;
 
 import data_structures.Sorted;
-import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.atomic.AtomicStampedReference;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     final static int CLEAN = 0, DFLAG = 1, IFLAG = 2, MARK = 3;
@@ -15,47 +16,48 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
 	public void add(T t) {
-        /*Boolean compare;
-        InternalNode p, newInternal;
-        Leaf l, newSibling;
-        Leaf newChild = new Leaf(t);
-        Update pupdate, result, newup = new Update(CLEAN, null);
+        int compare;
+        Internal p, newInternal;
+        Leaf l, newSibling, newChild = new Leaf(t);
+        Update pupdate, newup;
         IInfo op;
+        Info pInfo;
+        int[] pState = new int[1];
 
         while(true){
-            SearchObject res = search(k);
-            compare = res.l.key.compareTo(k);
+            SearchObject res = search(t);
+            compare = res.l.compareTo(t);
             if (compare == 0)
                 return;
             else if (res.pupdate.state != CLEAN)
                 help(res.pupdate);
             else {
                 newSibling = new Leaf(res.l.key);
-                if (compare > 0) {
-                    newInternal = new InternalNode(res.l.key);
-                    newInteral.left = newSibling;
-                    newInteral.right = newInternal;
-                }
-                else {
-                    newInternal = new InternalNode(k);
-                    newInteral.right = newSibling;
-                    newInteral.left = newInternal;
-                }
+                if (compare > 0)
+                    newInternal = new Internal(res.l.key, newSibling, newInternal);
+                else
+                    newInternal = new Internal(t, newInternal, newSibling);
 
-                newInternal.update = newup;
+                newInternal.update = new Update();
+                pInfo = res.pupdate.info.get(pState);
                 op = new IInfo(p, l, newInternal);
-                res.p.compareAndSet();
-
-
+                
+                /* set next insert */
+                if (res.p.update.info.compareAndSet(pInfo, op, pState[0], IFLAG)){
+                    helpInsert(op);
+                    return;
+                } else {
+                    help(result);
+                }
             }
-        }*/
+        }
 	}
 
 	public void remove(T t) {
 		
 	}
 
-    public void help() {
+    public void help(Update u) {
         
     }
 
@@ -114,15 +116,11 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     class IInfo extends Info {
         Internal newInternal;
 
-        IInfo(Internal p, Leaf l) {
+        IInfo(Internal p, Leaf l, Internal newInter) {
             this.p = p;
             this.l = l;
+            this.newInternal = newInter;
         }
-    }
-
-    class Update {
-        int state = CLEAN;
-        Info info = null;
     }
 
     abstract class Node {
@@ -133,13 +131,20 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     /* normal list node */
     class Internal extends Node {
-        Update update = null;
+        AtomicMarkableReference<Update> update = null;
+        
         Node left = null,
              right = null;
 
         Internal() {}
         Internal(T t) {
             key = t;
+        }
+        
+        Internal(T t, Node l, Node r) {
+            key = t;
+            left = l;
+            right = r;
         }
 
         protected int compareTo(T t) {
@@ -154,7 +159,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     class Leaf extends Node {
-        T key = null;
+        ReferenT key = null;
 
         Leaf() {}
 
