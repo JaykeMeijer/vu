@@ -33,11 +33,10 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     * @param    T   t   value of item of the new node.
     */
 	public void add(T t) {
-		Node pred = null, curr = null;
-		root.lock();
+		Node pred = root, curr = null;
 
-		pred = root;
-		curr = root.left; // left of sentinal nodes
+		curr = pred.left; // left of sentinal nodes
+		pred.lock();
 		try {
 			while(curr != null){
 				curr.lock();
@@ -190,7 +189,6 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return pred;
     }
 
-    
 	public String toString() {
         return root.print("", true, false) + "\n\n";
 	}
