@@ -126,8 +126,13 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         return true; // FIXME just return true for now
     }
 
+	/**
+    * Returns the tree in a string.
+    * @return String
+    */
 	public String toString() {
-		return root + " " + root.left + " " + root.right;
+        return "";
+        //return root.print("", true, false);
 	}
 
     private SearchObject search(T t){
@@ -229,9 +234,37 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         protected int compareTo(T t) {
             return key.compareTo(t);
         }
-    }
 
-    class DummyNode extends Internal {
+  //   protected String print(String prefix, Boolean tail, Boolean l) {
+  //        String s;
+  //        Internal le, r;
+  //        if(l)
+  //            s = prefix + (tail ? "└── l " : "├── l ");
+  //        else
+  //            s = prefix + (tail ? "└── r " : "├── r ");
+  //        if(key != null)
+  //            s += key.toString() + '\n';
+  //        else
+  //            s += "null\n";
+  //        if(left != null && left.get().getClass() == Internal.class) {
+  //            left = (Internal) left;
+  //            right = (Internal) right;
+  //            if(right == null) {  // only a left child
+  //                s += left.get().print(prefix + (tail ? "    " : "│   "), true, true);
+  //            }
+  //            else {  // left and right child
+  //                s += left.get().print(prefix + (tail ? "    " : "│   "), false, true);
+  //                s += right.get().print(prefix + (tail ? "    " : "│   "), true, false);
+  //            }
+  //        } else if(right!= null && right.getClass() ==  Internal.class) {  // only a right child
+  //            s += right.get().print(prefix + (tail ? "    " : "│   "), false, false);
+  //        }
+  //        System.out.println(s);
+  //        return s;
+  //    }
+     }
+     
+     class DummyNode extends Internal {
         protected int compareTo(T t){
             return 1;
         }
