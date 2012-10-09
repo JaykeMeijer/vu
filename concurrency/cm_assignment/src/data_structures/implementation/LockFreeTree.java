@@ -60,7 +60,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Update pupdate, gpupdate, result;
         DInfo op;
 
-        while(true) {
+        /*while(true) {
             SearchObject res = search(t);
             if(res.l.key.compareTo(t) != 0)
                 return;
@@ -71,7 +71,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else {
                 op = new DInfo(res.gp, res.p, res.l, res.pupdate);
                 
-                /* FIXME compare and swap to compare and set + get */
+                // FIXME compare and swap to compare and set + get 
 
                 //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
@@ -81,7 +81,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     //help(result); // FIXME result to null voor compile error
                     help(null);
             }
-        }
+        }*/
 	}
 
     public void help(Update u) {
@@ -123,14 +123,18 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
 	public String toString() {
-		return root + " " + root.left + " " + root.right; 
+		return root + " " + root.left.get().key + " " + root.right.get().key; 
 	}
 
     private SearchObject search(T t){
         Internal gp = null, p = root;
-        Node l = root.left.get();;
+        Node l = root.left.get();
         Update gpupdate = null, pupdate = root.update;
         int i = 0;
+
+        System.out.println(root);
+        System.out.println(root.left);
+        System.out.println(l.getClass());
 
         while (l.getClass() == Internal.class || l.getClass() == DummyNode.class){
             gp = p;
@@ -141,7 +145,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else
                 l = gp.right.get();
         }
-        System.out.println("BYE search");
         return new SearchObject(gp, p, (Leaf) l, pupdate, gpupdate);
     }
 
