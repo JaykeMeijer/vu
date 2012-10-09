@@ -8,13 +8,13 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     private Internal root;
 
-	public LockFreeTree() {
+    public LockFreeTree() {
         root = new DummyNode();
         root.left = new AtomicReference<Node>(new DummyLeaf());
         root.right = new AtomicReference<Node>(new DummyLeaf());
     }
 
-	public void add(T t) {
+    public void add(T t) {
         int compare;
         Internal p = null, newInternal = null;
         Leaf l = null, newSibling;
@@ -30,11 +30,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
             if (compare == 0)
                 return;
-            else if (res.pupdate.info.getStamp() != CLEAN)
+            
+            if (res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
                 newSibling = new Leaf(res.l.key);
-                if (compare > 0)
+                if (compare < 0)
                     newInternal = new Internal(res.l.key, newSibling, newInternal);
                 else
                     newInternal = new Internal(t, newInternal, newSibling);
@@ -48,13 +49,14 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     return;
                 } else {
                     //help(result);  //FIXME dit stond er maar compile error
+                    System.out.println("Holy shit deze hebben we nog niet!");
                     help(null);
                 }
             }
         }
-	}
+    }
 
-	public void remove(T t) {
+    public void remove(T t) {
         Internal gp, p;
         Leaf l;
         Update pupdate, gpupdate, result;
@@ -71,7 +73,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else {
                 op = new DInfo(res.gp, res.p, res.l, res.pupdate);
                 
-                // FIXME compare and swap to compare and set + get 
+                // FIXME compare and swap to compare and set + get
 
                 //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
@@ -82,7 +84,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     help(null);
             }
         }*/
-	}
+    }
 
     public void help(Update u) {
     }
@@ -94,8 +96,27 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
 
         //CAS-Child(op → p,op → l,op → newInternal)
-        op.p.get().left.compareAndSet(op.l, op.newInternal);
+        //find correct child
+        cassChild(op.p.get(), op.l, op.newInternal);
+
+        //CAS(op → p → update, ⟨IFlag, op⟩, ⟨Clean, op⟩)
+        op.p.get().update.info.compareAndSet(op, op, IFLAG, CLEAN);
+         
     }
+
+    //◃ Precondition: parent points to an Internal node and new points to a Node (i.e., neither is ⊥)
+    //◃ This routine tries to change one of the child fields of the node that parent points to from old to new.
+    //  if new→key<parent→keythen
+    //      CAS(parent → left, old, new) 116    else 117    CAS(parent → right, old, new) 118 }
+
+    public void cassChild(Internal parent, Leaf old, Internal nw) {
+        System.out.println(nw.key);
+        if(parent.compareTo(nw.key) > 0)
+            parent.left.compareAndSet(old, nw);
+        else
+            parent.right.compareAndSet(old, nw);
+    }
+
 
     public boolean helpDelete(DInfo op) {
         /*◃ Precondition: op points to a DInfo record (i.e., it is not ⊥)
@@ -120,19 +141,19 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         return true; // FIXME just return true for now
     }
 
-	public String toString() {
-		return root + " " + root.left.get().key + " " + root.right.get().key; 
-	}
+    /**
+    * Returns the tree in a string.
+    * @return String
+    */
+    public String toString() {
+        return root.print("", true, false);
+    }
 
     private SearchObject search(T t){
         Internal gp = null, p = root;
         Node l = root.left.get();
         Update gpupdate = null, pupdate = root.update;
         int i = 0;
-
-        System.out.println(root);
-        System.out.println(root.left);
-        System.out.println(l.getClass());
 
         while (l.getClass() == Internal.class || l.getClass() == DummyNode.class){
             gp = p;
@@ -204,6 +225,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         T key = null;
 
         protected abstract int compareTo(T t);
+        protected abstract String print(String prefix, Boolean tail, Boolean l);
     }
 
     /* normal list node */
@@ -226,9 +248,32 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         protected int compareTo(T t) {
             return key.compareTo(t);
         }
-    }
 
-    class DummyNode extends Internal {
+        protected String print(String prefix, Boolean tail, Boolean l) {
+            String s = prefix;
+            if(l)
+                s += (tail ? "└── l " : "├── l ");
+            else
+                s += (tail ? "└── r " : "├── r ");
+            if(key != null)
+                s += key.toString() + '\n';
+            else
+                s += "null\n";
+            if(left != null && left.get() != null) {
+                if(right == null || right.get() == null) {  // only a left child
+                    s += left.get().print(prefix + (tail ? "    " : "│   "), true, true);
+                }
+                else {  // left and right child
+                    s += left.get().print(prefix + (tail ? "    " : "│   "), false, true);
+                    s += right.get().print(prefix + (tail ? "    " : "│   "), true, false);
+                }
+            } else if(right != null && right.get() != null) // only a right child
+                s += right.get().print(prefix + (tail ? "    " : "│   "), false, false);
+            return s;
+      }
+     }
+     
+     class DummyNode extends Internal {
         protected int compareTo(T t){
             return 1;
         }
@@ -240,12 +285,26 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Leaf() {}
 
         Leaf(T t){
-            key = new AtomicReference(key);
+            //key = new AtomicReference<T>(t);
+            key = t;
         }
 
         protected int compareTo(T t) {
             return key.compareTo(t);
         }
+
+        protected String print(String prefix, Boolean tail, Boolean l) {
+             String s = prefix;
+             if(l)
+                 s += (tail ? "└── l " : "├── l ");
+             else
+                 s += (tail ? "└── r " : "├── r ");
+             if(key != null)
+                 s += key.toString() + '\n';
+             else
+                 s += "null\n";
+             return s;
+         }
     }
 
     class DummyLeaf extends Leaf {
