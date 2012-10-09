@@ -1,7 +1,7 @@
 package data_structures.implementation;
 
 import data_structures.Sorted;
-import java.util.concurrent.atomic.AtomicMarkableReference;
+import java.util.concurrent.atomic.*;
 
 public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     final static int CLEAN = 0, DFLAG = 1, IFLAG = 2, MARK = 3;
@@ -15,40 +15,42 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
 	public void add(T t) {
-        /*Boolean compare;
-        InternalNode p, newInternal;
-        Leaf l, newSibling;
-        Leaf newChild = new Leaf(t);
-        Update pupdate, result, newup = new Update(CLEAN, null);
+        int compare;
+        Internal p = null, newInternal = null;
+        Leaf l = null, newSibling;
+        Update pupdate, newup;
         IInfo op;
+        Info pInfo;
+        int[] pState = new int[1];
 
-        while(true){
-            SearchObject res = search(k);
-            compare = res.l.key.compareTo(k);
+        while(true) {
+            SearchObject res = search(t);
+            compare = res.l.compareTo(t);
             if (compare == 0)
                 return;
-            else if (res.pupdate.state != CLEAN)
+            else if (res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
                 newSibling = new Leaf(res.l.key);
-                if (compare > 0) {
-                    newInternal = new InternalNode(res.l.key);
-                    newInteral.left = newSibling;
-                    newInteral.right = newInternal;
-                }
-                else {
-                    newInternal = new InternalNode(k);
-                    newInteral.right = newSibling;
-                    newInteral.left = newInternal;
-                }
+                if (compare > 0)
+                    newInternal = new Internal(res.l.key, newSibling, newInternal);
+                else
+                    newInternal = new Internal(t, newInternal, newSibling);
 
-                newInternal.update = newup;
+                newInternal.update = new Update();
+                pInfo = res.pupdate.info.get(pState);
                 op = new IInfo(p, l, newInternal);
-                res.p.compareAndSet();
-
-
+                
+                /* set next insert */
+                if (res.p.update.info.compareAndSet(pInfo, op, pState[0], IFLAG)){
+                    helpInsert(op);
+                    return;
+                } else {
+                    //help(result);  //FIXME dit stond er maar compile error
+                    help(null);
+                }
             }
-        }*/
+        }
 	}
 
 	public void remove(T t) {
@@ -81,30 +83,29 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             SearchObject res = search(t);
             if(res.l.key.compareTo(t) != 0)
                 return;
-            if(res.gpupdate.state != CLEAN)
+            if(res.gpupdate.info.getStamp() != CLEAN)
                 help(res.gpupdate);
-            else if(res.pupdate.state != CLEAN)
+            else if(res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
                 op = new DInfo(res.gp, res.p, (Leaf) res.l, res.pupdate);
                 
                 /* FIXME compare and swap to compare and set + get */
                 //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
-                if(res.gp.update.compareAndSet(res.gpupdate.info, op, res.gpupdate.state, DFLAG))
-                //if(result == res.gpupdate) {
+                if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
                     if(helpDelete(op))
                         return;
-                //}
                 else
-                    help(result);
+                    //help(result); // FIXME result to null voor compile error
+                    help(null);
             }
-            break;
         }
-        return;
 	}
 
     public void help(Update u) {
-        
+    }
+
+    public void helpInsert(IInfo op) {
     }
 
     public boolean helpDelete(DInfo op) {
@@ -127,6 +128,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         
         //if(result 
 
+        return true; // FIXME just return true for now
     }
 
 	public String toString() {
@@ -185,15 +187,15 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     class IInfo extends Info {
         Internal newInternal;
 
-        IInfo(Internal p, Leaf l) {
+        IInfo(Internal p, Leaf l, Internal newInter) {
             this.p = p;
             this.l = l;
+            this.newInternal = newInter;
         }
     }
 
     class Update {
-        int state = CLEAN;
-        Info info = null;
+        AtomicStampedReference<Info> info ;
     }
 
     abstract class Node {
@@ -212,6 +214,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Internal(T t) {
             key = t;
         }
+        
+        Internal(T t, Node l, Node r) {
+            key = t;
+            left = l;
+            right = r;
+        }
 
         protected int compareTo(T t) {
             return key.compareTo(t);
@@ -225,6 +233,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     class Leaf extends Node {
+        //ReferenT key = null;  //FIXME weer naar T omdat hij niet compilde
         T key = null;
 
         Leaf() {}
