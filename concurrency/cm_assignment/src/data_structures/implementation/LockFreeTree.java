@@ -25,7 +25,10 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
         while(true) {
             SearchObject res = search(t);
+            
+
             compare = res.l.compareTo(t);
+
             if (compare == 0)
                 return;
             else if (res.pupdate.info.getStamp() != CLEAN)
@@ -36,13 +39,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     newInternal = new Internal(res.l.key, newSibling, newInternal);
                 else
                     newInternal = new Internal(t, newInternal, newSibling);
-
                 newInternal.update = new Update();
                 pInfo = res.pupdate.info.get(pState);
                 op = new IInfo(p, l, newInternal);
                 
                 /* set next insert */
-                if (res.p.update.info.compareAndSet(pInfo, op, pState[0], IFLAG)){
+                if (res.p.update.info.compareAndSet(pInfo, op, pState[0], IFLAG)) {
                     helpInsert(op);
                     return;
                 } else {
@@ -58,26 +60,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Leaf l;
         Update pupdate, gpupdate, result;
         DInfo op;
-        
-        /*while True {
-            ⟨gp, p, l, pupdate, gpupdate⟩ := Search(k)
-            if l → key ̸= k then
-                return False
-            if gpupdate.state ̸= Clean then
-                Help(gpupdate)
-            else if pupdate.state ̸= Clean then
-                Help(pupdate)
-            else {
-                op := pointer to a new DInfo record containing ⟨gp, p, l, pupdate⟩
-                result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
-                if result = gpupdate then {
-                    if HelpDelete(op) then
-                        return True
-                }
-                else 
-                    Help(result)   ◃ The dflag CAS failed; help the operation that caused the failure
-            }
-        }*/
 
         while(true) {
             SearchObject res = search(t);
@@ -91,6 +73,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                 op = new DInfo(res.gp, res.p, (Leaf) res.l, res.pupdate);
                 
                 /* FIXME compare and swap to compare and set + get */
+
                 //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
                     if(helpDelete(op))
@@ -136,19 +119,21 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 	}
 
     private SearchObject search(T t){
-        Internal gp = null, p = null;
-        Node l = root;
-        Update gpupdate = null, pupdate = null;
+        Internal gp = null, p = root;
+        Node l = root.left;
+        Update gpupdate = null, pupdate = root.update;
+        int i = 0;
 
-        while (l.getClass() == Internal.class){
+        while (l.getClass() == Internal.class || l.getClass() == DummyNode.class){
             gp = p;
             p = (Internal) l;
             pupdate = p.update;
-            if (l.compareTo(t) == -1)
+            if (l.compareTo(t) > 0)
                 l = gp.left;
             else
                 l = gp.right;
         }
+        System.out.println("BYE search");
         return new SearchObject(gp, p, l, pupdate, gpupdate);
     }
 
@@ -196,6 +181,15 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     class Update {
         AtomicStampedReference<Info> info ;
+
+        Update() {
+            info = new AtomicStampedReference<Info>(null, 0);
+        }
+
+        Update(Info i, int s) {
+            info = new AtomicStampedReference<Info>(i, s);
+        }
+
     }
 
     abstract class Node {
@@ -206,7 +200,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     /* normal list node */
     class Internal extends Node {
-        Update update = null;
+        Update update = new Update();
         Node left = null,
              right = null;
 
