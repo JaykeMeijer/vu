@@ -29,7 +29,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             compare = res.l.compareTo(t);
             if (compare == 0)
                 return;
-            else if (res.pupdate.state != CLEAN)
+            else if (res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
                 newSibling = new Leaf(res.l.key);
@@ -125,6 +125,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     class Update {
         AtomicStampedReference<Info> info ;
+
+        Update(){}
+
+        Update(Info i, int state){
+            info = new AtomicStampedReference<Info>(i, state);
+        }
     }
 
     abstract class Node {
@@ -135,7 +141,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     /* normal list node */
     class Internal extends Node {
-        AtomicMarkableReference<Update>s update = null;
+        Update update = null;
         Node left = null,
              right = null;
 
@@ -162,12 +168,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     class Leaf extends Node {
-        ReferenT key = null;
+        AtomicReference key = null;
 
         Leaf() {}
 
         Leaf(T t){
-            key = t;
+            key = new AtomicReference(key);
         }
 
         protected int compareTo(T t) {
