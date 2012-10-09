@@ -14,7 +14,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         root.right = new AtomicReference<Node>(new DummyLeaf());
     }
 
-	public void add(T t) {
+    public void add(T t) {
         int compare;
         Internal p = null, newInternal = null;
         Leaf l = null, newSibling;
@@ -52,15 +52,15 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                 }
             }
         }
-	}
+    }
 
-	public void remove(T t) {
+    public void remove(T t) {
         Internal gp, p;
         Leaf l;
         Update pupdate, gpupdate, result;
         DInfo op;
 
-        while(true) {
+        /*while(true) {
             SearchObject res = search(t);
             if(res.l.key.compareTo(t) != 0)
                 return;
@@ -71,7 +71,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else {
                 op = new DInfo(res.gp, res.p, res.l, res.pupdate);
                 
-                /* FIXME compare and swap to compare and set + get */
+                // FIXME compare and swap to compare and set + get
 
                 //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
@@ -81,8 +81,8 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     //help(result); // FIXME result to null voor compile error
                     help(null);
             }
-        }
-	}
+        }*/
+    }
 
     public void help(Update u) {
     }
@@ -94,7 +94,13 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
 
         //CAS-Child(op → p,op → l,op → newInternal)
+        //find correct child
         op.p.get().left.compareAndSet(op.l, op.newInternal);
+        op.p.get().right.compareAndSet(op.l, op.newInternal);
+
+        //CAS(op → p → update, ⟨IFlag, op⟩, ⟨Clean, op⟩)
+        op.p.get().update.info.compareAndSet(op, op, IFLAG, CLEAN);
+         
     }
 
     public boolean helpDelete(DInfo op) {
@@ -121,7 +127,7 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
 	public String toString() {
-		return root + " " + root.left + " " + root.right; 
+		return root + " " + root.left + " " + root.right;
 	}
 
     private SearchObject search(T t){
@@ -237,7 +243,8 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Leaf() {}
 
         Leaf(T t){
-            key = new AtomicReference(key);
+            //key = new AtomicReference<T>(t);
+            key = t;
         }
 
         protected int compareTo(T t) {
