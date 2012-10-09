@@ -95,8 +95,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
         //CAS-Child(op → p,op → l,op → newInternal)
         op.p.get().left.compareAndSet(op.l, op.newInternal);
-        
-        //CAS(op → p → update, ⟨IFlag, op⟩, ⟨Clean, op⟩)
     }
 
     public boolean helpDelete(DInfo op) {
@@ -200,7 +198,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Update(Info i, int s) {
             info = new AtomicStampedReference<Info>(i, s);
         }
-
     }
 
     abstract class Node {
@@ -238,13 +235,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     class Leaf extends Node {
-        //ReferenT key = null;  //FIXME weer naar T omdat hij niet compilde
         T key = null;
 
         Leaf() {}
 
         Leaf(T t){
-            key = t;
+            key = new AtomicReference(key);
         }
 
         protected int compareTo(T t) {
