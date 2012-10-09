@@ -52,11 +52,81 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 	}
 
 	public void remove(T t) {
-		
+        Internal gp, p;
+        Leaf l;
+        Update pupdate, gpupdate, result;
+        DInfo op;
+        
+        /*while True {
+            ⟨gp, p, l, pupdate, gpupdate⟩ := Search(k)
+            if l → key ̸= k then
+                return False
+            if gpupdate.state ̸= Clean then
+                Help(gpupdate)
+            else if pupdate.state ̸= Clean then
+                Help(pupdate)
+            else {
+                op := pointer to a new DInfo record containing ⟨gp, p, l, pupdate⟩
+                result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
+                if result = gpupdate then {
+                    if HelpDelete(op) then
+                        return True
+                }
+                else 
+                    Help(result)   ◃ The dflag CAS failed; help the operation that caused the failure
+            }
+        }*/
+
+        while(true) {
+            SearchObject res = search(t);
+            if(res.l.key.compareTo(t) != 0)
+                return;
+            if(res.gpupdate.state != CLEAN)
+                help(res.gpupdate);
+            else if(res.pupdate.state != CLEAN)
+                help(res.pupdate);
+            else {
+                op = new DInfo(res.gp, res.p, (Leaf) res.l, res.pupdate);
+                
+                /* FIXME compare and swap to compare and set + get */
+                //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
+                if(res.gp.update.compareAndSet(res.gpupdate.info, op, res.gpupdate.state, DFLAG))
+                //if(result == res.gpupdate) {
+                    if(helpDelete(op))
+                        return;
+                //}
+                else
+                    help(result);
+            }
+            break;
+        }
+        return;
 	}
 
-    public void help() {
+    public void help(Update u) {
         
+    }
+
+    public boolean helpDelete(DInfo op) {
+        /*◃ Precondition: op points to a DInfo record (i.e., it is not ⊥)
+        Update result
+        result := CAS(op → p → update, op → pupdate, ⟨Mark, op⟩)
+        if result = op → pupdate or result = ⟨Mark, op⟩ then {
+            HelpMarked(op)
+            return true;
+        } else {
+            Help(result)
+            CAS(op → gp → update, ⟨DFlag, op⟩, ⟨Clean, op⟩)
+            return false;
+        }*/
+
+        if(op == null)
+            return false;
+
+        Update result;
+        
+        //if(result 
+
     }
 
 	public String toString() {
@@ -77,7 +147,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             else
                 l = gp.right;
         }
-
         return new SearchObject(gp, p, l, pupdate, gpupdate);
     }
 
@@ -100,14 +169,16 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Leaf l = null;
     }
 
-
+    //op = new DInfo(res.gp, res.p, res.l, res.pupdate);
     class DInfo extends Info {
         Internal gp = null;
+        Update pupdate;
 
-        DInfo(Internal gp, Internal p, Leaf l) {
+        DInfo(Internal gp, Internal p, Leaf l, Update u) {
             this.gp = gp;
             this.p = p;
             this.l = l;
+            this.pupdate = u;
         }
     }
 
