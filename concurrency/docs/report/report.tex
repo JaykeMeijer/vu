@@ -10,18 +10,28 @@
 \usepackage[all]{xy}
 \usepackage{listings}
 \usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
-\author{Rik van der Kooij: stdnummer, 252----, rij--- VUNETID: \\ \&  \\ Richard Torenvliet: stdnummer, 2526864 \ VUNET-id: rtt210}
+\author{Rik van der Kooij: stdnummer, 2526314, VU-net-id: rkj800\\ \&  \\ Richard Torenvliet: stdnummer, 2526864 \ VU-net-id: rtt210}
 \title{Concurrency \& Multithreading, concurrent datastructures}
 \begin{document}
 \maketitle
 \tableofcontents
+
 \section{Introduction}
 This document is a follow up of the design document made earlier in this coarse. In the design document the idea of different types of synchronizing a concurrent datastructure where discussed and a hypotheses was made about the performance. In the following sections these hypotheses are proofen or disprooven.
 
 \section{Coarse Grained}
 \subsection{list}
-The original hypothesis
+The implementations of the concurrent list data structure all follow the pseudocode examples of the book\footnote{The Art of Multicoreprocessor Programming by Maurice Herliy \& Shavit - Chapter 9 Linked Lists: The Role of Locking}. The sorting by hash values of the examples has been changed to the Comparable<T> interface as the assignment requested. The pseudocode code was also changed to allow double elements.
+
+We make use of two sentinel nodes head and tail. These are implemented as Node objects which override the compareTo method to always return -1 and 1 respectively. The debug toString method is nothing fancy. It prints the elements in the order they appear in the list with a space in between. The two sentinel nodes are not printed.
+
+Locking is done as we explained in the design document. A single ReentrantLock is used. It is locked at the start of each add and remove method and unlocked at the end. 
+
+
 \subsection{tree}
+
+
+
 
 \section{Fine Grained}
 \subsection{list}
@@ -30,4 +40,5 @@ The original hypothesis
 \section{Lock Free}
 \subsection{list}
 \subsection{tree}
+
 \end{document}
