@@ -12,8 +12,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         root = new Internal();
         root.left = new AtomicReference<Node>(new Leaf());
         root.right = new AtomicReference<Node>(new Leaf());
-        //root.left = new AtomicReference<Node>(new DummyLeaf());
-        //root.right = new AtomicReference<Node>(new DummyLeaf());
     }
 
     public void add(T t) {
@@ -36,10 +34,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             if (res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
-                //newInternal := pointer to a new Internal node with key field max(k, l → key),
-                //update field ⟨Clean,⊥⟩, and with two child fields equal to new and newSibling
-                //(the one with the smaller key is the left child)
-
                 newSibling = new Leaf(res.l.key);
                 if (compare < 0) // res.l < t
                     newInternal = new Internal(t, newSibling, newLeaf);
