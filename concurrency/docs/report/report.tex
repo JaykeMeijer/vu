@@ -41,19 +41,15 @@ Every data structure is called in the following ranges.
 <cgl, cgt, fgl, fgt, lfl, lft
 	nrThreads: 1, 2, 4, 8
 	nrItems: 100, 1000, 10000, 100000, 1000000
-	worktTime: 0, 1, 10, 50, 100
+	worktTime: 0
 \end{lstlisting}
 
-The number of threads, nritems are clear. The worktime is a number in microseconds a thread waits before adding the next element. If this number is 0 the threads do not wait before adding the next element what means that the contention is hight. The bigger the number the chance of high contention decreases.
+The number of threads, nritems are clear. The worktime is a number in microseconds a thread waits before adding the next element. If this number is 0 the threads do not wait before adding the next element what means that the contention is high. If the workload increases, the of chance of high contention decreases.
 
+\section{Lists}
+The hypothesis about the performance is that it would perform the slowest of all the datastructures. The fact that no concurrent updates can take place because of the locks on te beginning of an update would basically mean that it is an iterative datastructure. 
 
-
-
-
-\section{Coarse Grained}
-\subsection{list}
-The original hypothesis
-\subsection{tree}
+The difference between the list and the tree are not 
 
 \section{Fine Grained}
 \subsection{list}
