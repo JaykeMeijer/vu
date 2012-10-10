@@ -1,12 +1,12 @@
 /**
 *  Assignment Concurrency & Multithreading.
 *  
-*  Rik van der Kooij, rij---,  
+*  Rik van der Kooij, rkj800, 2526314
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: FineGrainedTree.java
 *       This program implements the a concurrent data structure with fine
-*       grained synchronization. Locks are obtained by in a hand-over-hand
+*       grained synchronization. Locks are obtained in a hand-over-hand
 *       fashion
 *
 */
@@ -26,9 +26,10 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         head = new HeadNode();
         head.next = new TailNode();
     }
+
     /**
-    *  
     * Adds a node to the datastructure with Fine grained synchronization
+    *
     * @param    T   t   item to add to the datastructure
     */
 	public void add(T t) {
@@ -36,8 +37,8 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         head.lock();
         /* copy of head */
         Node pred = head;
-        /*  */
         Node curr = pred.next;
+
         try {
             /* acquire lock on current node */
             curr.lock(); 
@@ -60,6 +61,13 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return;
     }
 
+   /**
+    * Find the node with value t and removes it.
+    * It traversers the list from the head to the element
+    * to be removed. 
+    *
+    * @param    T   t   value of node to be removed
+    */
 	public void remove(T t) {
         Node pred = null, curr = null;
         head.lock();
@@ -68,12 +76,14 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
             curr = pred.next;
             curr.lock();
             try {
+                /* find the place in the list the Node with item t should be */
                 while(curr.compareTo(t) == -1) {
                     pred.unlock();
                     pred = curr;
                     curr = curr.next;
                     curr.lock();
                 }
+                /* Remove the node if it has the item t */
                 if(curr.compareTo(t) == 0) {
                     pred.next = curr.next;
                 }
@@ -86,6 +96,10 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return;
 	}
 
+    /**
+    * prints the datastructure
+    * @return String 
+    */
 	public String toString() {
         String s = "";
         Node node = head;
@@ -97,11 +111,20 @@ public class FineGrainedList<T extends Comparable<T>> implements Sorted<T> {
         return s;
 	}
 
+    /**
+     * Nodes now have an lock of each own which
+     * have to be locked before using the next
+     * field
+     */
     abstract class Node {
         T item = null;
         Node next = null;
         ReentrantLock rtl = new ReentrantLock();
 
+        /**
+         * wrapper function to change the 
+         * node.lock.lock() into node.lock()
+         */
         protected void lock() {
             rtl.lock();
         }
