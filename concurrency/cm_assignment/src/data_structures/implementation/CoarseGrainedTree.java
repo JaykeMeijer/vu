@@ -1,11 +1,11 @@
 /*
 *  Assignment Concurrency & Multithreading.
 *  
-*  Rik van der Kooij, rij---,  
+*  Rik van der Kooij, rkj800, 2526314
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: CoarseGrainedTree.java
-*       This program implements the a concurrent data structure with coars
+*       This program implements the a concurrent data structure with coarse
 *       grained synchronization. Locks are obtained on the whole datastructure,
 *       so no other thread can manipulate the datastructure concurrenty.
 */
@@ -19,29 +19,41 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     private Node root;
     private ReentrantLock lock = new ReentrantLock();
 
+    /**
+    * Constructor. init head and tail node
+    */
     public CoarseGrainedTree() {
         root = new TailNode();
         root.left = new HeadNode();
     }
 
+   /**
+    *
+    * adds an item to the datastructure.
+    *
+    * @param    T   t   value of item of the new node.
+    */
 	public void add(T t) {
         Node pred, curr;
         lock.lock();
         try {
             pred = root;
-            curr = root.left;  // Sentinal nodes so we can do this.
+            curr = root.left;
 
+            /* find a parent for the element */
             while(curr != null) {
                 if(curr.compareTo(t) <= 0) {
                     pred = curr;
                     curr = curr.right;
                 }
-                else if(curr.compareTo(t) > 0) {  // maybe just else
+                else if(curr.compareTo(t) > 0) {
                     pred = curr;
                     curr = curr.left;
                 }
             }
             Node node = new TreeNode(t);
+            
+            /* add the node to the tree */
             if(pred.compareTo(t) <= 0) {
                 pred.right = node;
             } else {
@@ -73,7 +85,7 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                     pred = curr;
                     curr = curr.right;
                 }
-                else if(curr.compareTo(t) > 0) {  // maybe just else
+                else if(curr.compareTo(t) > 0) {
                     pred = curr;
                     curr = curr.left;
                 }
@@ -138,14 +150,14 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     }
 
     /** 
-     *  Returns parent of the inorder successor 
-     *  The successor is either the right or lef
-     *  child of the parent 
+     * Returns parent of the inorder successor 
+     * The successor is either the right or lef
+     * child of the parent 
      *
-     *  @param  Node    node    as starting point to search
+     * @param  Node    node    as starting point to search
      *                          its inorder successor.
      *
-     *  @return Node
+     * @return Node
      */
     private Node findParSucc(Node node) {
         Node pred = node;
@@ -173,9 +185,15 @@ public class CoarseGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 
         protected abstract int compareTo(T t);
 
-        /* Super awesome tree printing from stackoverflow:
-         *   http://stackoverflow.com/questions/4965335/how-to-print-binary-tree-diagram 
-         * which in term was from linux tree command */
+        /**
+         * Recusivly get a string representing the 
+         * tree. 
+         *
+         * @param   String  prefix  Prefix to print left from the current
+         *                          Node.
+         * @param   Boolean tail    Last child of parent 
+         * @param   Boolean l       Left child of tree
+         */
         protected String print(String prefix, Boolean tail, Boolean l) {
             String s;
             if(l)

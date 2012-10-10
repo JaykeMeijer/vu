@@ -1,4 +1,4 @@
-/*
+/**
 *  Assignment Concurrency & Multithreading.
 *  
 *  Rik van der Kooij, rkj800, 2526314
@@ -20,17 +20,19 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
     private Node head;
     private ReentrantLock lock = new ReentrantLock();
 
+    /**
+    * Constructor. init head and tail node
+    */
     public CoarseGrainedList() {
         head = new HeadNode();
         head.next = new TailNode();
     }
 
-   /**
-    *
-    * adds an item to the datastructure.
-    *
-    * @param    T   t   value of item of the new node.
-    */
+    /**
+     * adds an item to the datastructure.
+     *
+     * @param    T   t   value of item of the new node.
+     */
 	public void add(T t) {
         Node pred, curr;
         lock.lock();
@@ -50,7 +52,7 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
 	}
    
    /**
-    * Removes the node with value t and removes it.
+    * Find the node with value t and removes it
     * It traversers the list from the head to the element
     * to be removed. 
     *
@@ -63,10 +65,12 @@ public class CoarseGrainedList<T extends Comparable<T>> implements Sorted<T> {
             pred = head;
             curr = head.next;
 
+            /* find the place in the list the Node with item t should be */
             while(curr.compareTo(t) == -1) {
                 pred = curr;
                 curr = curr.next;
             }
+            /* Remove the node if it has the item t */
             if(curr.compareTo(t) == 0)
                 pred.next = curr.next;
         } finally {

@@ -1,7 +1,7 @@
 /**
 *  Assignment Concurrency & Multithreading.
 *  
-*  Rik van der Kooij, rij---,  
+*  Rik van der Kooij, rkj800, 2526314
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: FineGrainedTree.java
@@ -33,11 +33,13 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
     * @param    T   t   value of item of the new node.
     */
 	public void add(T t) {
-		Node pred = root, curr = null;
+		Node pred = root,
+             curr = null;
 
-		curr = pred.left; // left of sentinal nodes
+		curr = pred.left;
 		pred.lock();
 		try {
+            /* traverse tree until we get the spot to insert our element */
 			while(curr != null){
 				curr.lock();
 				if (curr.compareTo(t) <= 0){
@@ -51,6 +53,8 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
 				}
 			}
 			Node node = new TreeNode(t);
+            
+            /* find the right place to store the node */
 			if (pred.compareTo(t) <= 0){
 				pred.right = node;
 			} else {	
@@ -77,16 +81,14 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
             curr = root.left;
             try {
                 curr.lock();
-                /* find the node we want to remove() */
+                /* find the node we want to remove */
                 while(curr != null) {
                     if(curr.compareTo(t) < 0) {
-                        // go right
                         pred.unlock();
                         pred = curr;
                         curr = curr.right;
                         curr.lock();
                     } else if(curr.compareTo(t) > 0) {  // maybe just else
-                        // go left
                         pred.unlock();
                         pred = curr;
                         curr = curr.left;
@@ -96,9 +98,9 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
                         break;
                 }
 
-                if (curr.compareTo(t) == 0){
+                /* remove the item if it has the same item as t */
+                if (curr.compareTo(t) == 0)
                     remove(curr, pred);
-                }
                 
             } finally {
                 if (curr != null) // in case element is not found, curr is null
@@ -109,6 +111,7 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         }
         return;
     }
+
     /**
     * Removes the node from the datastructure. 3 basic cases are evaluated.
     * The node to be removed has:
@@ -189,10 +192,19 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         return pred;
     }
 
+    /**
+    * prints the datastructure
+    * @return String 
+    */
 	public String toString() {
         return root.print("", true, false) + "\n\n";
 	}
 
+    /**
+     * Nodes now have an lock of each own which
+     * have to be locked before using the next
+     * field
+     */
    	abstract class Node {
    		public ReentrantLock lock = new ReentrantLock();
         T item = null;
@@ -203,6 +215,15 @@ public class FineGrainedTree<T extends Comparable<T>> implements Sorted<T> {
         protected abstract void lock();
         protected abstract void unlock();
 
+        /**
+         * Recusivly get a string representing the 
+         * tree. 
+         *
+         * @param   String  prefix  Prefix to print left from the current
+         *                          Node.
+         * @param   Boolean tail    Last child of parent 
+         * @param   Boolean l       Left child of tree
+         */
         protected String print(String prefix, Boolean tail, Boolean l) {
             String s;
             if(l)

@@ -1,3 +1,28 @@
+/**
+*  Assignment Concurrency & Multithreading.
+*  
+*  Rik van der Kooij, rkj800, 2526314
+*  Richard Torenvliet, rtt210, 2526863
+*
+*  Program: LockFreeTree.java
+*       This program implements the a concurrent data structure (tree) with lock 
+*       free synchronization. Adding an element is done in three steps:
+*       - mark parent with an insert flag
+*       - insert new leaf to the tree
+*       - unmark parent
+*
+*       Removing an element is done in 4 steps:
+*       - mark grandparent with delete flag
+*       - mark the parent with marked flag
+*       - remove the node and its parent (swap with other leaf/null)
+*       - unmark the grandparent
+*
+*       All the stages of the add and remove store enough information to let
+*       other threads help them to complete the task.
+*/
+
+
+
 package data_structures.implementation;
 
 import data_structures.Sorted;
@@ -51,8 +76,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                     helpInsert(op);
                     return;
                 } else {
-                    //help(result);  //FIXME dit stond er maar compile error
-                    //System.out.println("Holy shit deze hebben we nog niet!");
                     pInfo = res.p.update.info.get(pState);
 
                     help(res.p.update);
@@ -66,7 +89,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Update gpupdate, result;
         DInfo op;
 
-        //System.out.println(toString() + "\n");
 
         while(true) {
             SearchObject res = search(t);
@@ -80,17 +102,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             } else {
                 op = new DInfo(res.gp, res.p, res.l, res.pupdate);
                 
-                // FIXME compare and swap to compare and set + get
-
-                //result := CAS(gp → update, gpupdate, ⟨DFlag, op⟩)
                 int[] stamp = new int[1];
                 Info info = res.gp.update.info.get(stamp);
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
                     if(helpDelete(op))
                         return;
                 else {
-                    //System.out.println("failed compareAndSet 1");
-                    //help(result); // FIXME result to null voor compile error
                     help(res.gp.update);
                 }
             }
@@ -115,7 +132,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         casChild(op.p, op.l, op.newInternal);
 
         op.p.update.info.compareAndSet(op, op, IFLAG, CLEAN);
-            //System.out.println("failed compareAndSet 2");
 
          
     }
@@ -126,15 +142,10 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         if(nw.getClass() == Leaf.class)
             key = ((Leaf)nw).key;
             
-        //if(parent.compareTo(key) > 0) // -1   
         if(nw.compareTo(parent.key) < 0) // -1   
-            // parent > nw.key
             parent.left.compareAndSet(old, nw);
-                //System.out.println("failed compareAndSet 3");
         else
-            // parent <= nw.key
             parent.right.compareAndSet(old, nw);
-                //System.out.println("failed compareAndSet 4");
     }
 
 
@@ -150,22 +161,17 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             helpMarked(op);
             return true;
         } else {
-            //System.out.println("failed compareAndSet 5");
             help(op.p.update);
             
-            //CAS(op ->  gp -> update, <DFlag, op>, <Clean, op>)
             op.gp.update.info.compareAndSet(op, op, DFLAG, CLEAN);
-                //System.out.println("failed compareAndSet 6");
             return false;
         }
     }
 
     public void helpMarked(DInfo op) {
-        //System.out.println("ENTER HELP MARKED");
         int[] opFlag = new int[1];
         Node other;
 
-        // p(43).l == 43 
         if(op.p.right.get() == op.l)
             other = op.p.left.get();
         else
@@ -173,7 +179,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
         casChild(op.gp, op.p, other);
         op.gp.update.info.compareAndSet(op, op, DFLAG, CLEAN);
-            //System.out.println("failed compareAndSet 7");
         return;
     }
 
@@ -233,7 +238,6 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Leaf l = null;
     }
 
-    //op = new DInfo(res.gp, res.p, res.l, res.pupdate);
     class DInfo extends Info {
         Internal gp = null;
         Update pupdate;
