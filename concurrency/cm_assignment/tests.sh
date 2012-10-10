@@ -6,7 +6,18 @@ THREADS=12
 WORKLOAD=( 0 10 20 30 40 50 60 70 80)
 NUMEL=( 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000)
 
-echo "<data_structure> <nrThreads> <nrItems> <workTime> <runTime>" > file.txt
+echo "<data_structure> <nrThreads> <nrItems> <workTime> <runTime>" > file3.txt
+
+for work in "${WORKLOAD[@]}"
+do
+    for data in "${DATA[@]}"
+    do
+        echo "sh bin/test_data_structures $data 4 10000 $work"
+        time=`sh bin/test_data_structures $data 4 10000 $work | grep time | egrep -o [0-9]+`
+        echo $data 4 10000 $work $time >> file3.txt
+    done
+done
+
 
 for ((i=1; i <= $THREADS; i++))
 do
@@ -17,6 +28,8 @@ do
     done
 done
 
+
+
 for elem in "${NUMEL[@]}"
 do
     for data in "${DATA[@]}"
@@ -26,11 +39,4 @@ do
     done
 done
 
-for work in "${WORKLOAD[@]}"
-do
-   for data in "${DATA[@]}"
-   do
-       time=`sh bin/test_data_structures $data 4 10000 $work | grep time | egrep -o [0-9]+`
-       echo $data 4 10000 $work $time >> file3.txt
-   done
-done    
+ 
