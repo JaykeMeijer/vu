@@ -91,8 +91,6 @@ for num_of_elem in ( 10000 20000 30000 40000 50000 60000 70000 80000 90000 10000
         bin/test_data_structures $data 4 $num_of_elem 30
 \end{lstlisting}
 
-
-
 \textbf{Test 3:} \\
 Using 4 threads for every datastructure, updating 1000 elements, and altering the workTime from 0 to 80 will give us a view on how the datastructures will behave with different contentions. 
 \vspace{0.1cm}
@@ -104,13 +102,13 @@ for worktime in ( 0 10 20 30 40 50 60 70 80 )
         test_data_structures $datastructure 4 10000 $worktime  
 \end{lstlisting}
 
-Next sections will discuss the list and tree datastructures. Because of the fact that the performance of a tree farly outstands the performance of the list.
+Next sections will discuss the list and tree datastructures. Because of the fact that the performance of a tree farly outstands the performance of the list the lists are compared to lists and trees to trees. The difference in performance of a list and tree are not interesting, because the performance difference of the locking algorithm can not be measured.
 
-Concluding from the previous, a number of research questions can be made and answered in the following sections. These all concern the performance of the database, so how does a certain parameter influence the performance.
+Concluding from the previous, a number of research questions can be created and answered in the following sections. These all concern the performance of the datastructure, so how does a certain parameter influence the performance.
 \begin{enumerate}
-\item parameter: Number of Threads
-\item parameter: Number of Items
-\item parameter: WorkTime
+\item The parameter: Number of Threads 
+\item The parameter: Number of Items 
+\item The parameter: WorkTime 
 \end{enumerate}
 
 \section{List performances}
@@ -128,29 +126,161 @@ Locking is done as we explained in the design document. A single ReentrantLock i
 
 \subsection{Lock Free}
 
+\subsection{Benchmarks}
+
 \section{Tree performances}
 \subsection{Coarse Grained}
-The Coarse Grained Tree is a BST and is similarly locked as the Coarse Grained list version. To be able to make use of the head an tail nodes as starting 
-\subsection{Fine Grained}
-The nodes in the fine grained BST the locks are also obtained in a hand-over-hand fashion just like the list. The sentinal nodes are allocated in the same way as the Coarse Grained Tree. With a tailnode at the root, and a head node left, and on the right side of the head will be the tree itself. 
+The Coarse Grained Tree is a BST and is similarly locked as the Coarse Grained list version. To be able to make use of the head an tail nodes as a starting point. The binary tree is initialized in a special way. 
 
-In the add function a traverse is performed in order to find the empty node where the new item needs to placed. If the compareTo function is less then 0, the search traverses to the right node, else the left node. When the specific empty node is found, a new node is created and added to the right or left side of the parent. Of course the choice that a new node is placed left or right from its parent is depended on the compareTo on with parent is \texttt{$\leq 0$} or \texttt{$> 0$} the child node. 
+\begin{figure}[h!]
+\centerline{
+	\xymatrix{  
+&  & *+++[F]{tail(sentinal)}  \ar[dl] \ar[dr] \\
+& *+++[F]{head(sentinal)} \ar[dr] \ar[dl] & & NULL \\
+NULL & &*+++[F=]{TREE} \\
+	}
+}
+\end{figure}
 
+The tail node is always the biggest node in the tree, so no node can every be inserted right in the tree. The head node is smaller than tail so it is placed left in the tree, it is also smaller than every other node that will be inserted. So the tree will be placed right of the node. This special way of 
+declaring a head and tail node in the tree saves a lot of overhead. So no
+To create a node that is always bigger of smaller than other nodes, lies in the compareTo function. Every node has to have a compareTo function, the special head and tail nodes always returns -1 or 1 respectively.
+
+The add function will first take the root node as a starting point. Locks it, and does the update by adding the new Node to the tree and then unlocks the root.
+
+By adding a node, first the proper empty node needs to be found. While no empty node if found, compare the key with the current node and go left or right, accordingly. 
+
+\begin{figure}
+\center
+\begin{lstlisting}
+/* find a parent for the element */
+while(curr != null) {
+    if(curr.compareTo(t) <= 0) {
+        pred = curr;				// go right
+        curr = curr.right;
+    }
+    else if(curr.compareTo(t) > 0) {
+        pred = curr;				// go left
+        curr = curr.left;
+    }
+}
+\end{lstlisting}
+\label{fig:find}
+\end{figure}
+
+We end up with the correct empty node and create a new node to add to the 
+database. The only thing that needs to checked if the pred, also parent of the new node, needs to placed left or right of the parent.
+\\
+This is simply done by the following code.
+\begin{lstlisting}
+/* add the node to the tree */
+if(pred.compareTo(t) <= 0) {
+    pred.right = node;
+} else {
+    pred.left = node;
+}
+\end{lstlisting}
+This ensures that the node is placed in the correct place.
+\\
+The remove function looks similar in the search for the correct node to remove but it breaks out of the while loop, see fig \ref{find}, if it has found the correct node. Now something special happens when removing the node. Three cases can happen in a tree. Either the node to be removed (1) has no children, (2) has one child, (3) has two children. Case (3) is the most difficult one.
+
+In the case the node has no children, the correct node has to be deleted.
+\begin{lstlisting}
+/* delete left or right child */
+if(parent.left == node) 
+    parent.left = null;
+else
+    parent.right = null;
+\end{lstlisting}
+
+In case of (2), swap the node with its child. With the left or right node accordingly.
+\begin{lstlisting}
+if(nodeToDelete.left != null)
+    if(parent.left == node) {
+        parent.left = node.left;
+    } else
+        parent.right = node.left;
+else 
+    if(parent.left == node)
+        parent.left = node.right;
+    else
+        parent.right = node.right;
+\end{lstlisting}
+
+In case of (3) the in order-successor needs to found. This is done by traversing one child to the right and traversing al the way to the left to the last node. This node is used to replace the node to be deleted.
 
 \begin{lstlisting}
-/* find the right place to store the node */
-if (pred.compareTo(t) <= 0){
-	pred.right = node;
-	} else {	
-		pred.left = node;
-		}
-} finally
+Node pred = node;
+node = node.right; // one step to the right
+
+/* traverse left until node == null */
+while(node.left != null) {
+    pred = node;
+    node = node.left; // go left
+}
+/* return the parent of that node */
+return pred;
+\end{lstlisting}
+
+If the inorder successor is the same next right node, the parent is the same as the parent of the in order succesor. So thats why there are two cases. The item of the node is replaced by item of the in-order successor. The in-order-successor's 
+\begin{lstlisting}
+par_succ = Find_parSucc(node);
+if(par_succ == node) {
+    /* successor is right child of the node */
+    succ = par_succ.right;
+    node.item = succ.item;
+    node.right = succ.right;
+} else {
+    /* successor is left somewhere deeper in the tree */
+    succ = par_succ.left;
+    node.item = succ.item;
+    par_succ.left = succ.right;
+}
 \end{lstlisting}
 
 
+\subsection{Fine Grained}
+The nodes in the fine grained BST the locks are also obtained in a hand-over-hand fashion just like the list. The sentinal nodes are allocated in the same way as the Coarse Grained Tree. With a tailnode at the root, and a head node left, and on the right side of the head will be the tree itself. 
+
+The add function is almost identical as the one in the coarse grained tree accept the locks are differently placed.
+
+Begin by locking the root and the root.left node. Call these pred and curr respectivelly
+
+\begin{lstlisting}
+while(curr != null) {
+if(curr.compareTo(t) < 0) {
+    pred.unlock();
+    pred = curr;
+    curr = curr.right;
+    curr.lock();
+} else if(curr.compareTo(t) > 0) {  // maybe just else
+    pred.unlock();
+    pred = curr;
+    curr = curr.left;
+    curr.lock();
+}
+\end{lstlisting}
+
+The other difference is finding the in-order successor, case(3). Again in a hand-over-hand locking the parent of the node of the in-order-successor is found and returned. While holding the lock, it may not be changed in the mean time by another thread.
+
+\begin{lstlisting}
+Node pred = node;
+node = node.right;
+node.lock();
+try {
+    while(node.left != null) {
+        pred = node;
+        node = node.left;
+        node.lock();
+        pred.unlock();
+    }
+\end{lstlisting}
 
 \subsection{Lock Free}
 
-\subsection{conclusion}
+
+\subsection{Benchmarks}
+
+\section{conclusion}
 
 \end{document}
