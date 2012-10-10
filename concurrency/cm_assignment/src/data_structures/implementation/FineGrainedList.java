@@ -4,10 +4,10 @@
 *  Rik van der Kooij, rkj800, 2526314
 *  Richard Torenvliet, rtt210, 2526863
 *
-*  Program: FineGrainedTree.java
+*  Program: FineGrainedList.java
 *       This program implements the a concurrent data structure with fine
 *       grained synchronization. Locks are obtained in a hand-over-hand
-*       fashion
+*       fashion.
 *
 */
 

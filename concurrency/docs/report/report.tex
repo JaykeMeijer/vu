@@ -117,20 +117,25 @@ Concluding from the previous, a number of research questions can be made and ans
 \subsection{Coarse Grained}
 The implementations of the concurrent list data structure all follow the pseudocode examples of the book\footnote{The Art of Multicoreprocessor Programming by Maurice Herliy \& Shavit - Chapter 9 Linked Lists: The Role of Locking}. The sorting by hash values of the examples has been changed to the Comparable<T> interface as the assignment requested. The pseudocode code was also changed to allow double elements.
 
-We make use of two sentinel nodes head and tail. These are implemented as Node objects which override the compareTo method to always return -1 and 1 respectively. The debug toString method is nothing fancy. It prints the elements in the order they appear in the list with a space in between. The two sentinel nodes are not printed.
+We make use of two sentinel nodes head and tail. These nodes are always the head and tail. The sentinel nodes are useful to create clear code since we do not have to check for empty lists. These are implemented as Node objects which override the compareTo method to always return -1 and 1 respectively. The debug toString method is nothing fancy. It prints the elements in the order they appear in the list with a space in between. The two sentinel nodes are not printed.
 
-Locking is done as we explained in the design document. A single ReentrantLock is used. It is locked at the start of each add and remove method and unlocked at the end.
+Locking is done as we explained in the design document. A single ReentrantLock is used. It is locked at the start of each add and remove method and unlocked at the end. When the lock is required we can simple traverse the linked list and insert/delete an element at the right place. 
 
 % \begin{figure}
 % 	\includegraphics[scale=1]{} 
 % \end{figure}
 \subsection{Fine Grained}
+The Fine Grained List uses a lock for each node. We can use a node if we have acquired lock of its predecessor. This means that using the root node requires us to acquire a lock of an non existing predecessor. This is solved by using sentinel nodes we had in the Coarse Grained implementation. Since the sentinel head node never changes we can use it without locking any node.
+
+Traversing the list consists of getting a lock and releasing a previous lock. When we arrive at the place where an element has to be added or removed we hold on to the two locks. Since no other threads can manipulate these nodes we can safely add a new element between the nodes. Removing a node is also safe because the next pointer of the `furthest' cannot be changed concurrently by other threads.
+
+
+
 
 \subsection{Lock Free}
 Adding an element can be broken down to one pointer swap. If this is done atomically adding can then be done lock free. Removing is not that simple. No concurrent removals of two subsequent nodes is allowed. This means that atomically setting the next pointer when removing is not enough. We solve this by first marking the node we are removing. If we then make sure that marked nodes cannot change their next pointer, we safely remove the node. Because we have to mark and set a pointer atomically we use the AtomicMarkedReference class of Java.
 
 The toSring method cannot be used for the lock free data structures when other threads are using the list. When we for instance get to a node it might be deleted concurrently. This means we include a removed Node.
-
 
 
 \section{Tree performances}
@@ -155,6 +160,8 @@ if (pred.compareTo(t) <= 0){
 
 
 \subsection{Lock Free}
+The Lock Free Tree is implemented as described in the paper Non-blocking Binary Search Tree\footnote{Non-blocking Binary Search Trees by Faith Ellen and Panagiota Fatourou and Eric Ruppert and Franck van Breugel}. 
+
 The lock free tree uses a leaf based tree. Adding a node will always add a leaf or a leaf and internal node. Removing will always remove a leaf and an internal node. This means that we can add a node to the lock free in 3 atomic steps and removing it in 4 atomic steps. The implementation makes uses of flags. Whenever an add or remove encounters a node with a flag it first tries to help it before trying its own operation. This can be done because every step stores enough information to finish the task.
 
 Adding a node to the tree starts with finding which node to add it to, its parent. This node will be marked with an insert flag. We can than safely insert the node to the tree as a leaf and unmark the parent. 
@@ -162,6 +169,15 @@ Adding a node to the tree starts with finding which node to add it to, its paren
 Removing a nodes also starts with finding the node which has to be removed. We then mark the grandparent with a delete flag since one of its child pointers is going to change. The parent is marked with a marked flag which shows that it is going to be removed as well. The removing is then done in the grandparent by setting the appropriate child to the sibling of the removed node. We finish by unmarking the grandparent which allows new operations on the node.
 
 For the toString method it's the same for the lock free tree. Elements we print might already be deleted or we might skip new elements which are added. We are therefore never sure the printed tree has ever really existed.
+
+%TODO de Compare and Swap -> Compare and Set uitleg
+The pseudocode description in the paper uses compare and swap methods which return the old value of the CAS object. Java does not support this operation. We can only use compare and set methods. Compare and swap operations where the result is not used have the same functionality as a compare and set. There are however three compare and swap calls in the pseudocode which use the result.
+
+The CAS on line 56 checks whether the compare and swap succeeded by checking if result (old value of the CAS object) had the value it expected. If it did not have the expected value it tries help the result. Our compare and set operation returns a boolean whether or not it succeeded. We can use this instead of comparing the result with our expected value. As far as getting the old value, we just use the CAS object. This can either be the real old value (all is fine) or a new value which a thread has set between our compare and set and our `get'. We try to help the new value, but this not a problem. Helping clean nodes will do nothing and helping a marked (either insert, delete or marked flag) node will only add an additional help call.
+
+The same proof can be given for the compare and swaps on line 81 and 91 which use the result value.
+
+
 
 
 \subsection{conclusion}
