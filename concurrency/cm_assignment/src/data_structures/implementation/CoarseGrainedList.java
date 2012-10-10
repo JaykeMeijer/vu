@@ -1,7 +1,7 @@
 /*
 *  Assignment Concurrency & Multithreading.
 *  
-*  Rik van der Kooij, rij---,  
+*  Rik van der Kooij, rkj800, 2526314
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: CoarseGrainedList.java
