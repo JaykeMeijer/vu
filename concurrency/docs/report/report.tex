@@ -9,6 +9,29 @@
 \usepackage{graphicx}
 \usepackage[all]{xy}
 \usepackage{listings}
+\lstset{ %
+  language=Java,                % the language of the code
+  basicstyle=\footnotesize,           % the size of the fonts that are used for the code
+  numbers=left,                   % where to put the line-numbers
+  numberstyle=\tiny\color{gray},  % the style that is used for the line-numbers
+  stepnumber=1,                   % the step between two line-numbers. If it's 1, each line 
+                                  % will be numbered
+  numbersep=5pt,                  % how far the line-numbers are from the code
+  backgroundcolor=\color{white},      % choose the background color. You must add \usepackage{color}
+  showspaces=false,               % show spaces adding particular underscores
+  showstringspaces=false,         % underline spaces within strings
+  showtabs=false,                 % show tabs within strings adding particular underscores	
+  rulecolor=\color{black},        % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. commens (green here))
+  tabsize=2,
+  captionpos=b,                   % sets the caption-position to bottom
+  breaklines=true,                % sets automatic line breaking
+  breakatwhitespace=false,        % sets if automatic breaks should only happen at whitespace
+  title=\lstname,                   % show the filename of files included with \lstinputlisting;
+                                  % also try caption instead of title
+  keywordstyle=\color{blue},          % keyword style
+  stringstyle=\color{mauve},         % string literal style
+  escapeinside={\%*}{*)},            % if you want to add LaTeX within you code
+}
 \usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
 \author{Rik van der Kooij: stdnummer, 2526314, VU-net-id: rkj800\\ \&  \\ Richard Torenvliet: stdnummer, 2526864 \ VU-net-id: rtt210}
 \title{Concurrency \& Multithreading, concurrent datastructures}
@@ -20,7 +43,7 @@
 This document is a follow up of the design document made earlier in this coarse. In the design document the idea of different types of synchronizing a concurrent datastructure where discussed and a hypotheses was made about the performance. In the following sections these hypotheses are proofen or disprooven.
 
 \section{Testing}
-The datastructures are tested with the shell file: \texttt{bin/test\_data\_structures.sh}. This script takes four parameters where the datastructes can be tested on.
+The datastructures are tested with the shell file: \texttt{bin/test\_data\_structures.sh}. This script takes four parameters where the datastructures can be tested on.
 
 \begin{figure}[h!]
 \center
@@ -34,20 +57,61 @@ test_data_structures <data_structure> <nrThreads> <nrItems> <workTime>
 \end{lstlisting}
 \caption{Executing data\_structures.sh}
 \end{figure}
+It will be interesting to see if the number of threads influences the performance of a datastructure if the number of elements stays equal. Also, the other way around will also be interesting to determine the best concurrent datastructure.
+
+The parameters threads, nritems should be clear. But the workTime is somewhat unclear, but it is a number in microseconds a thread waits before adding the next element. Testing can be done by changing this number. If 0 the threads do not wait before adding the next element what means that the contention is high, so how does the datastructure behave is an interesting question.
 
 With all the datastructures these parameters are changed in order to draw conclusions about the performance. 
+\\
+\\
+The datastructes are tested by doing the following tests \\
+\textbf{Test 1:} \\
+Changing from 1 thread to 12 threads with 10000 elements, and using 30ms of 
+worktime. The datastructures are tested.
+\vspace{0.1cm}
+\hrule
+\vspace{0.1cm}
 
-Every data structure is called in the following ranges.
 \begin{lstlisting}
-<cgl, cgt, fgl, fgt, lfl, lft
-	nrThreads: 1, 2, 4, 8
-	nrItems: 100, 1000, 10000, 100000, 1000000
-	worktTime: 0
+for nr_of_threads in 1 to 12:
+    for datastructure in (cgl cgt fgl fgt lfl lft):
+        test_data_structures $datastructure $nr_of_threads 10000 30  
 \end{lstlisting}
 
-The number of threads, nritems are clear. The worktime is a number in microseconds a thread waits before adding the next element. If this number is 0 the threads do not wait before adding the next element what means that the contention is high. If the workload increases, the of chance of high contention decreases.
+
+\textbf{Test 2:} \\
+Changing from 1 thread to 12 threads with 10000 elements, and using 30ms of 
+worktime. The datastructures are tested.
+\vspace{0.1cm}
+\hrule
+\vspace{0.1cm}
+\begin{lstlisting}
+for num_of_elem in ( 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000):
+    for datastructure in (cgl cgt fgl fgt lfl lft):
+        bin/test_data_structures $data 4 $num_of_elem 30
+\end{lstlisting}
+
+
+
+\textbf{Test 3:} \\
+Using 4 threads for every datastructure, updating 1000 elements, and altering the workTime from 0 to 80 will give us a view on how the datastructures will behave with different contentions. 
+\vspace{0.1cm}
+\hrule
+\vspace{0.1cm}
+\begin{lstlisting}
+for worktime in ( 0 10 20 30 40 50 60 70 80 )
+    for datastructure in (cgl cgt fgl fgt lfl lft):
+        test_data_structures $datastructure 4 10000 $worktime  
+\end{lstlisting}
 
 Next sections will discuss the list and tree datastructures. Because of the fact that the performance of a tree farly outstands the performance of the list.
+
+Concluding from the previous, a number of research questions can be made and answered in the following sections. These all concern the performance of the database, so how does a certain parameter influence the performance.
+\begin{enumerate}
+\item parameter: Number of Threads
+\item parameter: Number of Items
+\item parameter: WorkTime
+\end{enumerate}
 
 \section{List performances}
 \subsection{Coarse Grained}
@@ -73,6 +137,22 @@ The toSring method cannot be used for the lock free data structures when other t
 \subsection{Coarse Grained}
 The Coarse Grained Tree is a BST and is similarly locked as the Coarse Grained list version. To be able to make use of the head an tail nodes as starting 
 \subsection{Fine Grained}
+The nodes in the fine grained BST the locks are also obtained in a hand-over-hand fashion just like the list. The sentinal nodes are allocated in the same way as the Coarse Grained Tree. With a tailnode at the root, and a head node left, and on the right side of the head will be the tree itself. 
+
+In the add function a traverse is performed in order to find the empty node where the new item needs to placed. If the compareTo function is less then 0, the search traverses to the right node, else the left node. When the specific empty node is found, a new node is created and added to the right or left side of the parent. Of course the choice that a new node is placed left or right from its parent is depended on the compareTo on with parent is \texttt{$\leq 0$} or \texttt{$> 0$} the child node. 
+
+
+\begin{lstlisting}
+/* find the right place to store the node */
+if (pred.compareTo(t) <= 0){
+	pred.right = node;
+	} else {	
+		pred.left = node;
+		}
+} finally
+\end{lstlisting}
+
+
 
 \subsection{Lock Free}
 The lock free tree uses a leaf based tree. Adding a node will always add a leaf or a leaf and internal node. Removing will always remove a leaf and an internal node. This means that we can add a node to the lock free in 3 atomic steps and removing it in 4 atomic steps. The implementation makes uses of flags. Whenever an add or remove encounters a node with a flag it first tries to help it before trying its own operation. This can be done because every step stores enough information to finish the task.

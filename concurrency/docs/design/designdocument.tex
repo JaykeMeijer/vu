@@ -73,7 +73,7 @@ should be acquired. Locks of an element cannot be stored in the element
 itself. This would require us to read the element before locking. Maurice
 Herlihy and Nir Shavit solve this problem by adding sentinel head and tail
 elements.
-
+ 
 Inserting and deleting will be done by going through the list and locking two
 elements at a time. After the locks are acquired, the pointers will be set and
 locks will be freed. Figure \ref{fig:fine_insert} shows an example of how an insertion
