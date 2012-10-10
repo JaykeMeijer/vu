@@ -13,7 +13,7 @@ do
     for data in "${DATA[@]}"
     do
         time=`sh bin/test_data_structures $data $i 10000 30 | grep time | egrep -o [0-9]+`
-        echo $data $i 10000 10 $time >> file.txt
+        echo $data $i 10000 10 $time >> file3.txt
     done
 done
 
@@ -22,15 +22,15 @@ do
     for data in "${DATA[@]}"
     do
         time=`sh bin/test_data_structures $data 4 $elem 30 | grep time | egrep -o [0-9]+`
-        echo $data 4 $elem 30 $time >> file.txt
+        echo $data 4 $elem 30 $time >> file3.txt
     done
 done
 
 for work in "${WORKLOAD[@]}"
 do
-    for data in "${DATA[@]}"
-    do
-        time=`sh bin/test_data_structures $data 4 $elem 30 | grep time | egrep -o [0-9]+`
-        echo $data 4 10000 $work $time >> file.txt
-    done
-done
+   for data in "${DATA[@]}"
+   do
+       time=`sh bin/test_data_structures $data 4 10000 $work | grep time | egrep -o [0-9]+`
+       echo $data 4 10000 $work $time >> file3.txt
+   done
+done    
