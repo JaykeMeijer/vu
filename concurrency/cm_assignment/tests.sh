@@ -2,7 +2,7 @@
 
 # dit is gwn wat random shit
 DATA=( cgl cgt fgl fgt lfl lft )
-THREADS=1
+THREADS=12
 WORKLOAD=( 0 10 20 30 40 50 )
 NUMEL=( 10000 20000 30000 40000 50000 60000 70000 80000 90000 100000)
 
