@@ -18,6 +18,38 @@
 \section{Introduction}
 This document is a follow up of the design document made earlier in this coarse. In the design document the idea of different types of synchronizing a concurrent datastructure where discussed and a hypotheses was made about the performance. In the following sections these hypotheses are proofen or disprooven.
 
+\section{Testing}
+The datastructures are tested with the shell file: \texttt{bin/test\_data\_structures.sh}. This script takes four parameters where the datastructes can be tested on.
+
+\begin{figure}
+\center
+\begin{lstlisting}
+test_data_structures <data_structure> <nrThreads> <nrItems> <workTime>
+  where:
+    <data_structure> in {cgl, cgt, fgl, fgt, lfl, lft}
+    <nrThreads> is a number > 0
+    <nrItems> is a number > 0
+    <workTime> is a number >= 0 (micro seconds)
+\end{lstlisting}
+\caption{Executing data\_structures.sh}
+\end{figure}
+
+With all the datastructures these parameters are changed in order to draw conclusions about the performance. 
+
+Every data structure is called in the following ranges.
+\begin{lstlisting}
+<cgl, cgt, fgl, fgt, lfl, lft
+	nrThreads: 1, 2, 4, 8
+	nrItems: 100, 1000, 10000, 100000, 1000000
+	worktTime: 0, 1, 10, 50, 100
+\end{lstlisting}
+
+The number of threads, nritems are clear. The worktime is a number in microseconds a thread waits before adding the next element. If this number is 0 the threads do not wait before adding the next element what means that the contention is hight. The bigger the number the chance of high contention decreases.
+
+
+
+
+
 \section{Coarse Grained}
 \subsection{list}
 The original hypothesis
