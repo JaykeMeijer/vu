@@ -5,7 +5,7 @@
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: LockFreeTree.java
-*       This program implements the a concurrent data structure (tree) with lock 
+*       This program implements a concurrent data structure (tree) with lock 
 *       free synchronization. Adding an element is done in three steps:
 *       - mark parent with an insert flag
 *       - insert new leaf to the tree
@@ -33,12 +33,21 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
 
     private Internal root;
 
+    /**
+    * Constructor. init root sentinal nodes and leafs
+    */
     public LockFreeTree() {
         root = new Internal();
         root.left = new AtomicReference<Node>(new Leaf());
         root.right = new AtomicReference<Node>(new Leaf());
     }
 
+    /**
+    *
+    * adds an item to the datastructure.
+    *
+    * @param    T   t   value of item of the new node.
+    */
     public void add(T t) {
         int compare;
         Internal p = null, newInternal = null;
@@ -49,17 +58,24 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         int[] pState = new int[1];
 
         while(true) {
+            /* find the place to add the item */
             SearchObject res = search(t);
             
             compare = res.l.compareTo(t);
 
+            /* do not allow double elements */
             if (compare == 0)
                 return;
             
+            /* help the node if its not clean */
             if (res.pupdate.info.getStamp() != CLEAN)
                 help(res.pupdate);
             else {
+                /* create the new leaf */
                 newSibling = new Leaf(res.l.key);
+                
+                /* create the new internal node and set the leaf
+                 * nodes to at the right place */
                 if (compare < 0) // res.l < t
                     newInternal = new Internal(t, newSibling, newLeaf);
                 else             // res.l >= t
@@ -67,17 +83,20 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
                         newInternal = new Internal(newLeaf, newSibling);
                     else
                         newInternal = new Internal(res.l.key, newLeaf, newSibling);
+                /* give the new internal a clean update object */
                 newInternal.update = new Update();
+
                 pInfo = res.pupdate.info.get(pState);
+
+                /* create a new info field for other threads */
                 op = new IInfo(res.p, res.l, newInternal);
                 
-                /* set next insert */
+                /* set the insert flag */
                 if(res.p.update.info.compareAndSet(pInfo, op, pState[0], IFLAG)) {
                     helpInsert(op);
                     return;
                 } else {
-                    pInfo = res.p.update.info.get(pState);
-
+                    /* compare and set failed we have to help other thread */
                     help(res.p.update);
                 }
             }
@@ -89,31 +108,42 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         Update gpupdate, result;
         DInfo op;
 
-
         while(true) {
+            /* find the place of the leaf with item t */
             SearchObject res = search(t);
 
+            /* return if node was not found */
             if(res.l.compareTo(t) != 0)
                 return;
+            /* help parent and grandparent if they are not clean */
             if(res.gpupdate.info.getStamp() != CLEAN) {
                 help(res.gpupdate);
             } else if(res.pupdate.info.getStamp() != CLEAN) {
                 help(res.pupdate);
             } else {
+                /* create a new info object for other threads */
                 op = new DInfo(res.gp, res.p, res.l, res.pupdate);
                 
                 int[] stamp = new int[1];
                 Info info = res.gp.update.info.get(stamp);
+                /* try to set the mark of grand parent to the delete flag */
                 if(res.gp.update.info.compareAndSet(res.gpupdate.info.getReference(), (Info) op, res.gpupdate.info.getStamp(), DFLAG))
                     if(helpDelete(op))
                         return;
                 else {
+                    /* compare and set failed help other thread */
                     help(res.gp.update);
                 }
             }
         }
     }
 
+    /**
+     * help updates with there corresponding tasks 
+     * 
+     * @param   Update  u
+     * @return  void
+     */
     public void help(Update u) {
         int uState = u.info.getStamp();
         if (uState == IFLAG)
@@ -124,18 +154,29 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             helpDelete((DInfo)u.info.getReference());
     }
 
+    /**
+     * tries to physcally insert a node
+     * 
+     * @param IInfo op
+     * @return      void
+     */
     public void helpInsert(IInfo op) {
         if(op == null) {
             return;
         }
 
+        /* swap the child with the leaf */
         casChild(op.p, op.l, op.newInternal);
 
+        /* unmark the node parent */
         op.p.update.info.compareAndSet(op, op, IFLAG, CLEAN);
-
-         
     }
 
+    /**
+     * Swaps a child node with a new node
+     * 
+     * @return  void
+     */
     public void casChild(Internal parent, Node old, Node nw) {
         T key = nw.key;
 
@@ -148,7 +189,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
             parent.right.compareAndSet(old, nw);
     }
 
-
+    /**
+     * tries to physically removes a noded 
+     * 
+     * @param   DInfo   op
+     * @return  void
+     */
     public boolean helpDelete(DInfo op) {
         int[] opFlag = new int[1];
         Info opInfo;
@@ -168,6 +214,12 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         }
     }
 
+    /**
+     * tries to help marked nodes by physically removing
+     * nodes
+     *
+     * @return void
+     */
     public void helpMarked(DInfo op) {
         int[] opFlag = new int[1];
         Node other;
@@ -190,6 +242,10 @@ public class LockFreeTree<T extends Comparable<T>> implements Sorted<T> {
         return root.print("", true, false);
     }
 
+    /**
+     * Returns search object with information for add and remove function
+     * @returns SearchObject
+     */
     private SearchObject search(T t){
         Internal gp = null,
                  p = root;
