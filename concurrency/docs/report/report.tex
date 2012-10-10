@@ -63,6 +63,11 @@ Locking is done as we explained in the design document. A single ReentrantLock i
 \subsection{Fine Grained}
 
 \subsection{Lock Free}
+Adding an element can be broken down to one pointer swap. If this is done atomically adding can then be done lock free. Removing is not that simple. No concurrent removals of two subsequent nodes is allowed. This means that atomically setting the next pointer when removing is not enough. We solve this by first marking the node we are removing. If we then make sure that marked nodes cannot change their next pointer, we safely remove the node. Because we have to mark and set a pointer atomically we use the AtomicMarkedReference class of Java.
+
+The toSring method cannot be used for the lock free data structures when other threads are using the list. When we for instance get to a node it might be deleted concurrently. This means we include a removed Node.
+
+
 
 \section{Tree performances}
 \subsection{Coarse Grained}
@@ -70,6 +75,14 @@ The Coarse Grained Tree is a BST and is similarly locked as the Coarse Grained l
 \subsection{Fine Grained}
 
 \subsection{Lock Free}
+The lock free tree uses a leaf based tree. Adding a node will always add a leaf or a leaf and internal node. Removing will always remove a leaf and an internal node. This means that we can add a node to the lock free in 3 atomic steps and removing it in 4 atomic steps. The implementation makes uses of flags. Whenever an add or remove encounters a node with a flag it first tries to help it before trying its own operation. This can be done because every step stores enough information to finish the task.
+
+Adding a node to the tree starts with finding which node to add it to, its parent. This node will be marked with an insert flag. We can than safely insert the node to the tree as a leaf and unmark the parent. 
+
+Removing a nodes also starts with finding the node which has to be removed. We then mark the grandparent with a delete flag since one of its child pointers is going to change. The parent is marked with a marked flag which shows that it is going to be removed as well. The removing is then done in the grandparent by setting the appropriate child to the sibling of the removed node. We finish by unmarking the grandparent which allows new operations on the node.
+
+For the toString method it's the same for the lock free tree. Elements we print might already be deleted or we might skip new elements which are added. We are therefore never sure the printed tree has ever really existed.
+
 
 \subsection{conclusion}
 

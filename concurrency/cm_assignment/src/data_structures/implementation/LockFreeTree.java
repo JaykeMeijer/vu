@@ -5,7 +5,7 @@
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: LockFreeTree.java
-*       This program implements the a concurrent data structure (tree) with lock 
+*       This program implements a concurrent data structure (tree) with lock 
 *       free synchronization. Adding an element is done in three steps:
 *       - mark parent with an insert flag
 *       - insert new leaf to the tree

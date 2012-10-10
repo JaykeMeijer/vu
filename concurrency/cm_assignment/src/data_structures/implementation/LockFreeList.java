@@ -5,10 +5,10 @@
 *  Richard Torenvliet, rtt210, 2526863
 *
 *  Program: LockFeeList.java
-*       This program implements the a concurrent data structure (list) with lock 
+*       This program implements a concurrent data structure (list) with lock 
 *       free synchronization. An element is added by setting a pointer in a 
 *       single atomic step. Removing first marks a node to be logically
-*       removed. Other threads can therefore help by removing marked nodes.
+*       removed and then remove it physically.
 */
 
 
@@ -67,9 +67,12 @@ public class LockFreeList<T extends Comparable<T>> implements Sorted<T> {
                 return;
             else {
                 Node succ = curr.next.getReference();
+
+                /* remove the node logically */
                 snip = curr.next.compareAndSet(succ, succ, false, true);
                 if(!snip)
                     continue;
+                /* remove the node physically */
                 pred.next.compareAndSet(curr, succ, false, false);
             }
             return;
