@@ -1,6 +1,6 @@
 CC=gcc
 EXE=paperclient
-HEADER=writen_error
+HEADER=headers/writen_error
 
 all: writen $(EXE)
 
@@ -9,7 +9,7 @@ all: writen $(EXE)
 	$(CC) $@.o $(HEADER).o -o $@
 	
 writen: $(HEADER).c $(HEADER).h
-	$(CC) -c $(HEADER).c
+	$(CC) -c $(HEADER).c -o $(HEADER).o
 
 clean:
 	rm $(EXE) *.o
