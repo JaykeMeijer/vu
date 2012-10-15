@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "headers/writen_error.h"
+#include "add.h"
 
 void show_options(const char *str)
 {
@@ -18,13 +18,19 @@ void show_options(const char *str)
 
 int main(int argc, const char *argv[])
 {
-    int i;
-
+    CLIENT *cl;
+    param in;
+    add_out *out;
+    
     if(argc < 2)
         show_options(argv[0]);
-    else {
 
+    cl = clnt_create(argv[1], PAPER_SERVER, PAPER_VERSION, "tcp");
+    in.name = "Jan jansen"; 
+    in.title = "Test paper"; 
+    in.next = 0;
 
-    }
+    out = add_1(&in, cl);
+    printf("out.arg: %d\n", (int)*out);
     return 0;
 }
