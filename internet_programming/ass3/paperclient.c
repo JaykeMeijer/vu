@@ -3,6 +3,8 @@
 #include <string.h>
 #include "add.h"
 
+CLIENT *cl;
+
 void show_options(const char *str)
 {
     printf("usage: %s <hostname> <action> <arguments>\n", str);
@@ -16,12 +18,15 @@ void show_options(const char *str)
     exit(-1);
 }
 
-void add(const char *arg[])
+void add(const char **arg)
 {
     FILE *f;
     long size;
+    int number;
+    str_add paper;
 
-    printf("adding paper\n");
+    paper.name = (char *)arg[0];
+    paper.title = (char *)arg[1];
 
     f = fopen(arg[2], "rb");
     if(f == NULL) {
@@ -29,7 +34,7 @@ void add(const char *arg[])
         exit(-1);
     }
     /* get size of file */
-    if(!fseek(f, 0, SEEK_END)) {
+    if(fseek(f, 0L, SEEK_END) == -1) {
         perror("fseek failed");
         exit(-1);
     }
@@ -39,24 +44,60 @@ void add(const char *arg[])
         exit(-1);
     }
     rewind(f);
+
+    paper.p.len = size;
+    paper.p.val = malloc(sizeof(char) * size);
+    if(paper.p.val == NULL) {
+        perror("malloc failed");
+        exit(-1);
+    }
+    fread(paper.p.val, 1, size, f);
     fclose(f);
 
-    printf("%ld", size);
+    number = *add_1(&paper, cl);
+    printf("%d\n", number);
 
     return;
 }
-void remove_paper() { return; }
-void list() { return; }
-void info() { return; }
+void remove_paper(char* num)
+{
+    int number;
+
+    number = atoi(num);
+    remove_1(&number, cl);
+
+    return;
+}
+void list()
+{ 
+    str_list *i;
+    
+    i = list_1((void*) NULL, cl);
+    printf("list: %p %p\n", i, i->next);
+
+    while((i = i->next) != NULL) {
+        printf("%d\t%s\t%s\n", i->number, i->name, i->title);
+    }
+    return;
+}
+void info(char* num) 
+{
+    str_info in;
+    int number;
+
+    number = atoi(num);
+    in = *info_1(&number, cl);
+
+    printf("%d\t%s\t%s\n", in.number, in.name, in.title);
+    
+
+    return;
+}
 void fetch() { return; }
 
 
 int main(int argc, const char *argv[])
 {
-    CLIENT *cl;
-    //param in;
-    //add_out *out;
-    
     if(argc < 3)
         show_options(argv[0]);
 
@@ -69,11 +110,11 @@ int main(int argc, const char *argv[])
     if(!strcmp(argv[2], "add") && argc >= 6)
         add(argv+3);
     else if(!strcmp(argv[2], "remove") && argc >= 4)
-        remove_paper();
+        remove_paper((char *)argv[3]);
     else if(!strcmp(argv[2], "list"))
         list();
     else if(!strcmp(argv[2], "info"))
-        info();
+        info((char *)argv[3]);
     else if(!strcmp(argv[2], "fetch") && argc >= 4)
         fetch();
     else

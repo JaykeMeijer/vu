@@ -29,3 +29,9 @@ add_svc.o: add_svc.c add.h
 
 paperserver.o: paperserver.c add.h
 	$(CC) $(CFLAGS) -c -o paperserver.o paperserver.c
+	
+
+run:
+	./paperserver &
+	./paperclient localhost add 'rik' 'test1' papers/binary.pdf
+	./paperclient localhost add 'pizza' 'poep' papers/binary.pdf
