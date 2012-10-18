@@ -1,16 +1,18 @@
-all: hotel hotelimp hotelserver hotelclient
+all: Hotel HotelImp HotelServer HotelClient
 
-hotel: Hotel.java
+Hotel: Hotel.java
 	javac Hotel.java
 
-hotelimp: HotelImp.java
+HotelImp: HotelImp.java
 	javac HotelImp.java
 
-hotelserver: HotelServer.java
+HotelServer: HotelServer.java
 	javac HotelServer.java
 
-hotelclient: HotelClient.java
+HotelClient: HotelClient.java
 	javac HotelClient.java
 
 clean:
 	rm *.class
+
+.PHONY: hotel hotelimp hotelserver hotelclient
