@@ -1,0 +1,3 @@
+#!/bin/bash
+java -cp ${0/%hotelclient/} HotelClient $@
+
