@@ -15,9 +15,15 @@
 \maketitle
 
 \section{Introduction}
-All programs have been tested on the VU machine fluit.few.vu.nl with Linux version 2.6.32-5-amd64, gcc version 4.4.5 and java version 1.6.0\_26. All the programs can be compiled using the Makefile. Run the c programs with ./prog\_name.
+All programs have been tested on the VU machine fluit.few.vu.nl with Linux version 2.6.32-5-amd64, gcc version 4.4.5 and java version 1.6.0\_26. All the programs can be compiled using the Makefile from the `top' directory.
 
 
+\section{A paper storage server}
+\subsectoin{Paperserver}
+Run: \texttt{paper/paperserver}
+
+\subsection(Paperclient}
+Run: \texttt{paper/paperclient args..}
 
 \subsection{A}
 The problem with not knowing how much data has to be send is that it cannot be allocated beforehand. Using arrays would result in result in creating arrays with multiple sizes everytime new papers are added or removed. A better solution is using a data structure which has a pointer to the next one. This is simply a linked list. Other datastructure as trees could also be used, but are rather useless for our paperserver.
@@ -26,6 +32,22 @@ The problem with not knowing how much data has to be send is that it cannot be a
 The problem with sending strings of arbitrary size is that the recieving part should also know the length. For binary data it is needed because a `\\0' character cannot be used to determine the end of the string. The reciever does not know the size of the string.
 
 To solve this a number should be added which gives the size of the string.
+
+
+\section{A hotel reservation server}
+\subsection{Hotelserver}
+Run: \texttt{hotel/hotelserver}
+
+\subsectoin{Hotelclient}
+Run: \texttt{hotel/hotelclient args...}
+
+
+\section{Hotel reservation gateway}
+\subsection{hotelserver}
+Run: \texttt{hotelgw/hotelgw}
+
+\subsection{hotelgwclient}
+Run: \texttt{hotelgwclient/hotelgwclient args...}
 
 \subsection{C}
 The hotelgw is implemented as a sequential program. The RMI server creates a thread for every rmi request. It should therefore be wise to have either a threaded, one process per request or preforked server. However I did not implement any synchronization in the java rmi hotel server. I was therefore not able to implement one of the three server implementions.
