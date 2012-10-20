@@ -1,0 +1,5 @@
+#!/bin/bash
+source_path=${0/%hotelserver/}
+CLASSPATH=$source_path:$CLASSHPATH
+
+java HotelServer $@
