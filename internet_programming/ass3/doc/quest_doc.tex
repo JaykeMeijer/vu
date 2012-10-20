@@ -1,0 +1,51 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath}
+\usepackage{todonotes}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[all]{xy}
+\usepackage{listings}
+%\usepackage[left=3cm,right=3cm,top=3cm,bottom=3cm]{geometry}
+\title{Internet Programming\\Distributed Programming with Sockets}
+\author{Rik van der Kooij - rkj800}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+All programs have been tested on the VU machine fluit.few.vu.nl with Linux version 2.6.32-5-amd64, gcc version 4.4.5 and java version 1.6.0\_26. All the programs can be compiled using the Makefile. Run the c programs with ./prog\_name.
+
+
+
+\subsection{A}
+The problem with not knowing how much data has to be send is that it cannot be allocated beforehand. Using arrays would result in result in creating arrays with multiple sizes everytime new papers are added or removed. A better solution is using a data structure which has a pointer to the next one. This is simply a linked list. Other datastructure as trees could also be used, but are rather useless for our paperserver.
+
+\subsection{B}
+The problem with sending strings of arbitrary size is that the recieving part should also know the length. For binary data it is needed because a `\\0' character cannot be used to determine the end of the string. The reciever does not know the size of the string.
+
+To solve this a number should be added which gives the size of the string.
+
+\subsection{C}
+The hotelgw is implemented as a sequential program. The RMI server creates a thread for every rmi request. It should therefore be wise to have either a threaded, one process per request or preforked server. However I did not implement any synchronization in the java rmi hotel server. I was therefore not able to implement one of the three server implementions.
+
+\subsection{D}
+A gateway which should be able to communicate with every language should send data types every languague can handle: Strings. The client should send a string containing a command similair to what the input of the normal client can handle. The server can then just send a response as a String which the client can then easily print on the screen.
+
+Of course the server and (the client could as well) should check whether or not the input is a valid command.
+
+\subsection{E}
+User(s) handling the server should have the Hotel interface, HotelImp and HotelServer java or compiled class files. 
+
+Users(s) handling the gateway should have the Hotel interface and the HotelGW implementetion java or compiled class files. They should also know where the rmi server can be `found'.
+
+Users(s} handling hotelclient should have the hotelgwclient c file. They should also know where the gateway `server' an be found.
+
+\end{document}
+
+
+
+
+
+
