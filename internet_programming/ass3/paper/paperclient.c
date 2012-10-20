@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <unistd.h>
 #include "add.h"
 
 CLIENT *cl;
 
+/* displays the available command-line options available */
 void show_options(const char *str)
 {
     printf("usage: %s <hostname> <action> <arguments>\n", str);
@@ -18,6 +21,24 @@ void show_options(const char *str)
     exit(-1);
 }
 
+/* checks whether a string represends a 
+ * valid number
+ *
+ * return 0 if not and 1 otherwise
+ */
+int is_a_number(const char *str)
+{
+    char *end;
+    strtol(str, &end, 10);
+    
+    if (end == str || *end != '\0' || errno == ERANGE)
+        return 0;
+    else
+        return 1;
+}
+
+/* sends a paper to the server which
+ * should be added */
 void add(const char **arg)
 {
     FILE *f;
@@ -25,6 +46,7 @@ void add(const char **arg)
     int number;
     str_add paper;
 
+    /* store name and title */
     paper.name = (char *)arg[0];
     paper.title = (char *)arg[1];
 
@@ -33,19 +55,29 @@ void add(const char **arg)
         printf("File %s not found", arg[2]);
         exit(-1);
     }
-    /* get size of file */
+    
+    /* set file position indicator
+     * to the end of the file */
     if(fseek(f, 0L, SEEK_END) == -1) {
         perror("fseek failed");
         exit(-1);
     }
+
+    /* get the size of the file */ 
     size = ftell(f);
     if(size < 0) {
         perror("ftell failed");
         exit(-1);
     }
+    
+    /* set the file position indicator
+     * to the start of the file */
     rewind(f);
 
+    /* store the paper size */
     paper.p.len = size;
+
+    /* read file and store it */
     paper.p.val = malloc(sizeof(char) * size);
     if(paper.p.val == NULL) {
         perror("malloc failed");
@@ -54,46 +86,84 @@ void add(const char **arg)
     fread(paper.p.val, 1, size, f);
     fclose(f);
 
+    /* give rpc add request to server */
     number = *add_1(&paper, cl);
     printf("%d\n", number);
 
     return;
 }
+
+/* remove a paper from the server */
 void remove_paper(char* num)
 {
     int number;
 
+    /* convert string to number */
     number = atoi(num);
+
+    /* give rpc remove request to server */
     remove_1(&number, cl);
 
     return;
 }
+
+/* list the information of all papers
+ * currently stored at the server */
 void list()
 { 
     str_list *i;
     
-    i = list_1((void*) NULL, cl);
-    printf("list: %p %p\n", i, i->next);
+    /* get the list from the server */
+    i = list_1(NULL, cl);
 
-    while((i = i->next) != NULL) {
+    /* traverse the list and print the number
+     * name and title of the papers */
+    while(i != NULL) {
         printf("%d\t%s\t%s\n", i->number, i->name, i->title);
+        i = i->next;
     }
     return;
 }
+
+/* get the information of a specific paper */
 void info(char* num) 
 {
-    str_info in;
+    str_info *in = NULL;
     int number;
 
+    /* convert string to number */
     number = atoi(num);
-    in = *info_1(&number, cl);
 
-    printf("%d\t%s\t%s\n", in.number, in.name, in.title);
-    
+    /* get the info from the server */
+    in = info_1(&number, cl);
+
+    /* print if a paper is found */
+    if(in->number != -1)
+        printf("%d\t%s\t%s\n", in->number, in->name, in->title);
 
     return;
 }
-void fetch() { return; }
+
+/* fetch a paper from the server */
+void fetch(char* num)
+{
+    paper *p = NULL;
+    int i, number;
+
+    /* convert string to number */
+    number = atoi(num);
+
+    /* get the paper */
+    p = fetch_1(&number, cl);
+
+    /* print each character of the binary
+     * file. NOTE not all characters actually
+     * print something on the screen */
+    for(i = 0; i < p->len; i++)
+        printf("%c", p->val[i]);
+    
+    return;
+}
 
 
 int main(int argc, const char *argv[])
@@ -101,35 +171,28 @@ int main(int argc, const char *argv[])
     if(argc < 3)
         show_options(argv[0]);
 
+    /* connect to the sun rpc server */
     cl = clnt_create(argv[1], PAPER_SERVER, PAPER_VERSION, "tcp");
     if(cl == NULL) {
         perror("No RPC server found");
         exit(-1);
     }
 
+    /* execute command corresonding to the input
+     * check on enough arguments and if given
+     * numbers can be converted */
     if(!strcmp(argv[2], "add") && argc >= 6)
         add(argv+3);
-    else if(!strcmp(argv[2], "remove") && argc >= 4)
+    else if(!strcmp(argv[2], "remove") && argc >= 4 && is_a_number(argv[3]))
         remove_paper((char *)argv[3]);
     else if(!strcmp(argv[2], "list"))
         list();
-    else if(!strcmp(argv[2], "info"))
+    else if(!strcmp(argv[2], "info") && argc == 4 && is_a_number(argv[3]))
         info((char *)argv[3]);
-    else if(!strcmp(argv[2], "fetch") && argc >= 4)
-        fetch();
+    else if(!strcmp(argv[2], "fetch") && argc == 4 && is_a_number(argv[3]))
+        fetch((char *)argv[3]);
     else
         show_options(argv[0]);
 
-
-    //in.name = argv[3];
-    //in.title = argv[4]; 
-    //in.next = 0;
-    //out = add_1(&in, cl);
-    //printf("out.arg: %d\n", (int)*out);
-
     return 0;
 }
-
-
-
-

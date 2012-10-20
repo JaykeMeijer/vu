@@ -3,10 +3,10 @@
 
 # just call all Makefiles in the subdirectories
 all:
-	make -C hotel
-	make -C hotelgw
-	make -C hotelgwclient
-	make -C paper
+	make -s -C hotel
+	make -s -C hotelgw
+	make -s -C hotelgwclient
+	make -s -C paper
 
 clean:
 	make -C hotel clean

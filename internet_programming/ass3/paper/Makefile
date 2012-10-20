@@ -1,7 +1,7 @@
 CC		:= gcc
 CFLAGS  := -Wall
 
-#all: paperclient paperserver
+all: paperclient paperserver
 
 clean:
 	rm -f paperclient.o add_clnt.o add_xdr.o add_svc.o paperserver.o add_clnt.c add.h add_xdr.c add_svc.c paperclient paperserver
@@ -32,6 +32,6 @@ paperserver.o: paperserver.c add.h
 	
 
 run:
-	./paperserver &
-	./paperclient localhost add 'rik' 'test1' papers/binary.pdf
-	./paperclient localhost add 'pizza' 'poep' papers/binary.pdf
+#!	./paperserver &
+	./paperclient localhost add 'rik 1' 'test1' ../../papers/binary.pdf
+	./paperclient localhost add 'rik 2' 'test2' ../../papers/binary.pdf
