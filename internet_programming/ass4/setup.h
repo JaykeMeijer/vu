@@ -1,0 +1,6 @@
+#define BASEPHP            "localhost"
+#define BASECGI            "localhost/ass4/"
+#define HOTEL_GATEWAY_ADDR "localhost"
+#define HOTEL_GATEWAY_PORT "1234"
+#define PAPERSERVER_ADDR   "localhost"
+#define PAPERSERVER_PORT   ""
