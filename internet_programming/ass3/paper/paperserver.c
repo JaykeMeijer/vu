@@ -1,4 +1,4 @@
-#include "add.h"
+#include "paper.h"
 
 struct str_server {
     int     number;
@@ -117,12 +117,15 @@ str_list *list_1_svc(void *v, struct svc_req *rqstp)
     return(&out);
 }
 
+/* get info of the paper with given number */
 str_info *info_1_svc(int *number, struct svc_req *rqstp)
 {
     static str_info out;
     struct str_server *curr = &head;
 
+    /* traverse the linked list */
     while((curr = curr->next) != NULL) {
+        /* do we have the correct paper */
         if(curr->number == *number) {
             out.number = curr->number;
             out.name = curr->name;
@@ -131,7 +134,7 @@ str_info *info_1_svc(int *number, struct svc_req *rqstp)
             return(&out);
         }
     }
-
+    /* paper not found send empty structure */
     out.number = -1;
     out.name = "";
     out.title = "";
@@ -139,6 +142,7 @@ str_info *info_1_svc(int *number, struct svc_req *rqstp)
     return(&out);
 }
 
+/* returns the paper with the corresponding number */
 paper *fetch_1_svc(int *number, struct svc_req *rqstp)
 {
     static paper out;

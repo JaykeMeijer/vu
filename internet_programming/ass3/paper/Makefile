@@ -4,30 +4,30 @@ CFLAGS  := -Wall
 all: paperclient paperserver
 
 clean:
-	rm -f paperclient.o add_clnt.o add_xdr.o add_svc.o paperserver.o add_clnt.c add.h add_xdr.c add_svc.c paperclient paperserver
+	rm -f paperclient.o paper_clnt.o paper_xdr.o paper_svc.o paperserver.o paper_clnt.c paper.h paper_xdr.c paper_svc.c paperclient paperserver
 
-paperclient: paperclient.o add_clnt.o add_xdr.o 
-	$(CC) -o paperclient paperclient.o add_clnt.o add_xdr.o -lnsl  
+paperclient: paperclient.o paper_clnt.o paper_xdr.o 
+	$(CC) -o paperclient paperclient.o paper_clnt.o paper_xdr.o -lnsl  
 
-paperserver: paperserver.o add_svc.o add_xdr.o
-	$(CC) -o paperserver paperserver.o add_svc.o add_xdr.o -lnsl 
+paperserver: paperserver.o paper_svc.o paper_xdr.o
+	$(CC) -o paperserver paperserver.o paper_svc.o paper_xdr.o -lnsl 
 
-add_clnt.c add.h add_xdr.c add_svc.c: add.x
-	rpcgen add.x
+paper_clnt.c paper.h paper_xdr.c paper_svc.c: paper.x
+	rpcgen paper.x
 
-paperclient.o: paperclient.c add.h
+paperclient.o: paperclient.c paper.h
 	$(CC) $(CFLAGS) -c -o paperclient.o paperclient.c
 
-add_clnt.o: add_clnt.c add.h
-	$(CC) $(CFLAGS) -c -o add_clnt.o add_clnt.c
+paper_clnt.o: paper_clnt.c paper.h
+	$(CC) $(CFLAGS) -c -o paper_clnt.o paper_clnt.c
 
-add_xdr.o: add_xdr.c add.h
-	$(CC) $(CFLAGS) -c -o add_xdr.o add_xdr.c
+paper_xdr.o: paper_xdr.c paper.h
+	$(CC) $(CFLAGS) -c -o paper_xdr.o paper_xdr.c
 
-add_svc.o: add_svc.c add.h
-	$(CC) $(CFLAGS) -c -o add_svc.o add_svc.c
+paper_svc.o: paper_svc.c paper.h
+	$(CC) $(CFLAGS) -c -o paper_svc.o paper_svc.c
 
-paperserver.o: paperserver.c add.h
+paperserver.o: paperserver.c paper.h
 	$(CC) $(CFLAGS) -c -o paperserver.o paperserver.c
 	
 

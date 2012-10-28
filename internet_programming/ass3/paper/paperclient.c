@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
-#include "add.h"
+#include "paper.h"
 
 CLIENT *cl;
 

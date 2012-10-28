@@ -1,12 +1,9 @@
-
-
-
 all:
 	# call all Makefiles in the subdirectories
-	make -s -C hotel
-	make -s -C hotelgw
-	make -s -C hotelgwclient
-	make -s -C paper
+	make -C hotel
+	make -C hotelgw
+	make -C hotelgwclient
+	make -C paper
 
 clean:
 	make -C hotel clean
