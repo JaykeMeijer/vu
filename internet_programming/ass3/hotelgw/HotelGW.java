@@ -51,8 +51,10 @@ public class HotelGW {
                             name += clientArgs[i] + " ";
                         name.substring(0, name.length() - 1);
                         out.writeBytes(h.book(Integer.parseInt(clientArgs[1]), name).toString());
-                    } else if(clientArgs[0].equals("guests"))
+                    } else if(clientArgs[0].equals("guests")) {
+                        System.out.println("HERE WE GOOOO");
                         out.writeBytes(h.guests());
+                    }
 
                     /* close all file descriptors */
                     in.close();

@@ -66,12 +66,15 @@ closedown()
 }
 
 static void
-add_prog_1(rqstp, transp)
+paper_server_1(rqstp, transp)
 	struct svc_req *rqstp;
 	SVCXPRT *transp;
 {
 	union {
-		param add_1_arg;
+		str_add add_1_arg;
+		int remove_1_arg;
+		int info_1_arg;
+		int fetch_1_arg;
 	} argument;
 	char *result;
 	bool_t (*xdr_argument)(), (*xdr_result)();
@@ -85,9 +88,33 @@ add_prog_1(rqstp, transp)
 		return;
 
 	case ADD:
-		xdr_argument = xdr_param;
-		xdr_result = xdr_add_out;
+		xdr_argument = xdr_str_add;
+		xdr_result = xdr_int_out;
 		local = (char *(*)()) add_1_svc;
+		break;
+
+	case REMOVE:
+		xdr_argument = xdr_int;
+		xdr_result = xdr_int_out;
+		local = (char *(*)()) remove_1_svc;
+		break;
+
+	case LIST:
+		xdr_argument = xdr_void;
+		xdr_result = xdr_str_list;
+		local = (char *(*)()) list_1_svc;
+		break;
+
+	case INFO:
+		xdr_argument = xdr_int;
+		xdr_result = xdr_str_info;
+		local = (char *(*)()) info_1_svc;
+		break;
+
+	case FETCH:
+		xdr_argument = xdr_int;
+		xdr_result = xdr_paper;
+		local = (char *(*)()) fetch_1_svc;
 		break;
 
 	default:
@@ -164,7 +191,7 @@ char *argv[];
 		openlog("add", LOG_PID, LOG_DAEMON);
 #endif
 		sock = RPC_ANYSOCK;
-		(void) pmap_unset(ADD_PROG, ADD_VERS);
+		(void) pmap_unset(PAPER_SERVER, PAPER_VERSION);
 	}
 
 	if ((_rpcfdtype == 0) || (_rpcfdtype == SOCK_DGRAM)) {
@@ -175,8 +202,8 @@ char *argv[];
 		}
 		if (!_rpcpmstart)
 			proto = IPPROTO_UDP;
-		if (!svc_register(transp, ADD_PROG, ADD_VERS, add_prog_1, proto)) {
-			_msgout("unable to register (ADD_PROG, ADD_VERS, udp).");
+		if (!svc_register(transp, PAPER_SERVER, PAPER_VERSION, paper_server_1, proto)) {
+			_msgout("unable to register (PAPER_SERVER, PAPER_VERSION, udp).");
 			exit(1);
 		}
 	}
@@ -192,8 +219,8 @@ char *argv[];
 		}
 		if (!_rpcpmstart)
 			proto = IPPROTO_TCP;
-		if (!svc_register(transp, ADD_PROG, ADD_VERS, add_prog_1, proto)) {
-			_msgout("unable to register (ADD_PROG, ADD_VERS, tcp).");
+		if (!svc_register(transp, PAPER_SERVER, PAPER_VERSION, paper_server_1, proto)) {
+			_msgout("unable to register (PAPER_SERVER, PAPER_VERSION, tcp).");
 			exit(1);
 		}
 	}
