@@ -18,7 +18,7 @@ int distance(int **tab, int n)
 
 int main(int argc, const char *argv[])
 {
-    int m, n=1000, **tab, d;
+    int m, n=1000, **tab, d, *ptr;
     double time;
     struct timeval start, end;
 
@@ -27,7 +27,7 @@ int main(int argc, const char *argv[])
     gettimeofday(&start, 0) ;
 
     /* initialize tabs with random shit */
-    init_tab(n, &m, &tab, 1);
+    init_tab(n, &m, &tab, 1, &ptr);
 
     /* calculate total distance of the roads */
     d = distance(tab, n);

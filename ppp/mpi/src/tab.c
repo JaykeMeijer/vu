@@ -1,26 +1,30 @@
 #include "tab.h"
 
-int allo_tab_part(int n, int rows, int ***tabptr)
+int allo_tab_part(int n, int rows, int ***tabptr, int **ptr)
 {
     int i;
 
+    printf("Hello\n");
+
     int *p = (int *)malloc(n * rows * sizeof(int));
-    if(!p)
+    if(!(p))
         return -1;
 
-    (*tabptr) = (int **)malloc(n * sizeof(int *));
+    
+    (*tabptr) = (int **)malloc(rows * sizeof(int *));
     if(!(*tabptr)) {
         free(p);
         return -1;
     }
 
-    for(i = 0; i < rows; i++)
+    for(i = 0; i < n; i++)
         (*tabptr)[i] = &(p[i * n]);
+    (*ptr) = p;
 
     return 0;
 }
 
-int allocate_tab(int n, int ***tabptr)
+int allocate_tab(int n, int ***tabptr, int **ptr)
 {
     int i;
 
@@ -37,18 +41,19 @@ int allocate_tab(int n, int ***tabptr)
     }
 
     /* set up the pointers into the contiguous memory */
-    for(i = 0; i < n; i++) 
+    for(i = 0; i < n; i++)
        (*tabptr)[i] = &(p[i * n]);
+    (*ptr) = p;
 
     return 0;
 }
 
-void init_tab(int n, int *mptr, int ***tabptr, int oriented)
+void init_tab(int n, int *mptr, int ***tabptr, int oriented, int **ptr)
 {
     int **tab;
     int i, j, m=n*n;
 
-    if(allocate_tab(n, tabptr) == -1)
+    if(allocate_tab(n, tabptr, ptr) == -1)
         exit(42);
 
     tab = *tabptr;
@@ -58,9 +63,9 @@ void init_tab(int n, int *mptr, int ***tabptr, int oriented)
 
         for(j = 0; j < i; j++) {
             tab[i][j] = 1+(int)((double)MAX_DISTANCE*rand()/(RAND_MAX+1.0));
-            if(oriented) 
+            if(oriented)
                 tab[j][i] = 1+(int)((double)MAX_DISTANCE*rand()/(RAND_MAX+1.0));
-            else 
+            else
                 tab[j][i] = tab[i][j];
             if(tab[i][j]==MAX_DISTANCE)
                 m--;
@@ -71,12 +76,12 @@ void init_tab(int n, int *mptr, int ***tabptr, int oriented)
     *mptr = m;
 }
 
-int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr)
+int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr, int **p)
 {
     int **tab;
     int i,j,n,m;
     int source, destination, weight;
-    FILE* fp; 
+    FILE* fp;
     int bad_edges=0, oriented=0;
 
     fp = fopen(INPUTFILE, "r");
@@ -98,7 +103,7 @@ int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr)
             fprintf(stderr,"cannot malloc distance table\n");
             exit(42);
         }
-        
+
         for(j = 0; j < n; j++) {
             tab[i][j] =(i == j) ? 0 : MAX_DISTANCE;
         }
@@ -107,19 +112,19 @@ int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr)
     while(!feof(fp)) {
         fscanf(fp, "%d %d %d \n", &source, &destination, &weight);
         if(!oriented)
-            if(tab[source-1][destination-1] < MAX_DISTANCE) 
+            if(tab[source-1][destination-1] < MAX_DISTANCE)
                 bad_edges++;
             else {
                 tab[source-1][destination-1]=weight;
                 tab[destination-1][source-1]=weight;
             }
-        else 
+        else
             tab[source-1][destination-1]=weight;
     }
     fclose(fp);
-#ifdef VERBOSE 
+#ifdef VERBOSE
     for(i=0; i<n; i++) {
-        for(j=0; j<n; j++) 
+        for(j=0; j<n; j++)
             printf("%5d", tab[i][j]);
         printf("\n");
     }
@@ -129,7 +134,7 @@ int read_tab(char *INPUTFILE, int *nptr, int *mptr, int ***tabptr, int *optr)
     *nptr=n;
     *mptr=m;
     *optr=oriented;
-    return bad_edges; 
+    return bad_edges;
 }
 
 void free_tab(int **tab, int n)
